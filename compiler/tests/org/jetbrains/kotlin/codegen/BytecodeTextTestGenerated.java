@@ -2207,6 +2207,12 @@ public class BytecodeTextTestGenerated extends AbstractBytecodeTextTest {
             doTest(fileName);
         }
 
+        @TestMetadata("noBoxingInDefaultWhenWithSpecialCases.kt")
+        public void testNoBoxingInDefaultWhenWithSpecialCases() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/codegen/bytecodeText/when/noBoxingInDefaultWhenWithSpecialCases.kt");
+            doTest(fileName);
+        }
+
         @TestMetadata("qualifiedConstValsInsideWhen.kt")
         public void testQualifiedConstValsInsideWhen() throws Exception {
             String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/codegen/bytecodeText/when/qualifiedConstValsInsideWhen.kt");
