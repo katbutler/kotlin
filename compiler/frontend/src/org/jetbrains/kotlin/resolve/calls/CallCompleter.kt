@@ -20,9 +20,9 @@ import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.builtins.getReturnTypeFromFunctionType
 import org.jetbrains.kotlin.builtins.getValueParameterTypesFromFunctionType
 import org.jetbrains.kotlin.builtins.isFunctionType
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
+import org.jetbrains.kotlin.effectsystem.adapters.EffectSystem
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.*
 import org.jetbrains.kotlin.resolve.BindingContext.CONSTRAINT_SYSTEM_COMPLETER
@@ -136,6 +136,7 @@ class CallCompleter(
     ) {
         if (resolvedCall == null || resolvedCall.isCompleted || resolvedCall.constraintSystem == null) {
             completeArguments(context, results)
+            resolvedCall?.updateResultDFIFromEffectSystem(context.trace)
             resolvedCall?.markCallAsCompleted()
             return
         }
@@ -145,6 +146,7 @@ class CallCompleter(
         completeArguments(context, results)
 
         resolvedCall.updateResolutionStatusFromConstraintSystem(context, tracing)
+        resolvedCall.updateResultDFIFromEffectSystem(context.trace)
         resolvedCall.markCallAsCompleted()
     }
 
@@ -397,5 +399,13 @@ class CallCompleter(
         //If a receiver type is not null, then this safe expression is useless, and we don't need to make the result type nullable.
         val expressionType = trace.getType(expression.receiverExpression)
         return expressionType != null && TypeUtils.isNullableType(expressionType)
+    }
+
+    private fun MutableResolvedCall<*>.updateResultDFIFromEffectSystem(bindingTrace: BindingTrace) {
+        val resultDFIfromES = EffectSystem.getResultDFI(
+                this, bindingTrace, languageVersionSettings,
+                DescriptorUtils.getContainingModule(this.resultingDescriptor?.containingDeclaration ?: return)
+        )
+        this.dataFlowInfoForArguments.updateResultInfo(resultDFIfromES)
     }
 }
