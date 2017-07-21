@@ -7245,6 +7245,12 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                     doTest(fileName);
                 }
 
+                @TestMetadata("deeplyNested.kt")
+                public void testDeeplyNested() throws Exception {
+                    String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/effects/smartcasts/deeplyNested.kt");
+                    doTest(fileName);
+                }
+
                 @TestMetadata("intersectionTypes.kt")
                 public void testIntersectionTypes() throws Exception {
                     String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/effects/smartcasts/intersectionTypes.kt");
@@ -7272,6 +7278,12 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                 @TestMetadata("receiver.kt")
                 public void testReceiver() throws Exception {
                     String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/effects/smartcasts/receiver.kt");
+                    doTest(fileName);
+                }
+
+                @TestMetadata("throwsEffect.kt")
+                public void testThrowsEffect() throws Exception {
+                    String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/effects/smartcasts/throwsEffect.kt");
                     doTest(fileName);
                 }
 
