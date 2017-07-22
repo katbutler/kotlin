@@ -41,7 +41,7 @@ abstract class AbstractSequentialUnaryFunctor : ESFunctor {
 
         val evaluatedByFunctor = combineClauses(returning)
 
-        return EffectSchemasFactory.clauses(rest + evaluatedByFunctor)
+        return EffectSchemasFactory.clauses(rest + evaluatedByFunctor, listOf())
     }
 
     abstract fun combineClauses(list: List<ESClause>): List<ESClause>

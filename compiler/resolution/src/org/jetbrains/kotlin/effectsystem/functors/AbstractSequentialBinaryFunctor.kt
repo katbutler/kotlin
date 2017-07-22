@@ -42,7 +42,7 @@ abstract class AbstractSequentialBinaryFunctor : ESFunctor {
         // Traces that evaluated both arguments and went to the functor
         val evaluatedByFunctor = combineClauses(leftReturning, rightReturning)
 
-        return EffectSchemasFactory.clauses(leftRest + rightRest + evaluatedByFunctor)
+        return EffectSchemasFactory.clauses(leftRest + rightRest + evaluatedByFunctor, listOf())
     }
 
     abstract fun combineClauses(left: List<ESClause>, right: List<ESClause>): List<ESClause>

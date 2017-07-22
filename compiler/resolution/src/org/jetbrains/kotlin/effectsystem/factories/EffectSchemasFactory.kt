@@ -18,13 +18,11 @@ package org.jetbrains.kotlin.effectsystem.factories
 
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.impls.ESVariable
-import org.jetbrains.kotlin.effectsystem.structure.ESClause
-import org.jetbrains.kotlin.effectsystem.structure.ESValue
-import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 import org.jetbrains.kotlin.effectsystem.impls.EffectSchemaImpl
+import org.jetbrains.kotlin.effectsystem.structure.*
 
 object EffectSchemasFactory {
-    fun pureReturns(value: ESValue): EffectSchema = clauses(listOf(ClausesFactory.always(ESReturns(value))))
-
-    fun clauses(clauses: List<ESClause>, params: List<ESVariable> = listOf()): EffectSchema = EffectSchemaImpl(clauses, params)
+    fun pureReturns(value: ESValue): EffectSchema = clauses(listOf(ClausesFactory.always(ESReturns(value))), listOf())
+    fun singleClause(premise: ESBooleanExpression, effects: List<ESEffect>, variables: List<ESVariable>) = clauses(listOf(ClausesFactory.create(premise, effects)), variables)
+    fun clauses(clauses: List<ESClause>, params: List<ESVariable>): EffectSchema = EffectSchemaImpl(clauses, params)
 }

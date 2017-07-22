@@ -16,12 +16,19 @@
 
 package org.jetbrains.kotlin.effectsystem.resolving
 
+import org.jetbrains.kotlin.effectsystem.resolving.parsers.InPlaceCallFunctorParser
+import org.jetbrains.kotlin.effectsystem.resolving.parsers.ReturnsFunctorParser
+import org.jetbrains.kotlin.effectsystem.resolving.parsers.ThrowsFunctorParser
 import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 
 class FunctorResolver {
-    private val parsers: MutableList<FunctorParser> = mutableListOf()
-
+    private val parsers: MutableList<FunctorParser> = mutableListOf(
+            InPlaceCallFunctorParser(),
+            ReturnsFunctorParser(),
+            ThrowsFunctorParser()
+        )
+    
     fun resolveFunctor(resolvedCall: ResolvedCall<*>): ESFunctor? {
         val resolutionResults = parsers.mapNotNull { it.tryParseFunctor(resolvedCall) }
         if (resolutionResults.isEmpty()) return null

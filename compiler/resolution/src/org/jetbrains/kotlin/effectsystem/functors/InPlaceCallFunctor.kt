@@ -41,6 +41,6 @@ class InPlaceCallFunctor(val invocationCount: ESCalls.InvocationCount, private v
 
             val newEffect = ESCalls(variable, invocationCount)
             return@map clause.withoutReturns().withEffect(newEffect)
-        })
+        }, listOf())
     }
 }

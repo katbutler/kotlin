@@ -33,7 +33,7 @@ class EffectSchemaImpl(override val clauses: List<ESClause>, val parameters: Lis
 
         // Build a pack of arguments schemas with only relevant clauses
         val filteredArgs = arguments.map { schema ->
-            EffectSchemasFactory.clauses(schema.clauses.filter { it.conclusion.any { it is ESReturns || it is ESThrows } })
+            EffectSchemasFactory.clauses(schema.clauses.filter { it.conclusion.any { it is ESReturns || it is ESThrows } }, listOf())
         }
         val substs = parameters.zip(filteredArgs).toMap()
 
@@ -57,6 +57,6 @@ class EffectSchemaImpl(override val clauses: List<ESClause>, val parameters: Lis
             }
         }
 
-        return EffectSchemasFactory.clauses(irrelevantClauses + combinedClauses)
+        return EffectSchemasFactory.clauses(irrelevantClauses + combinedClauses, listOf())
     }
 }
