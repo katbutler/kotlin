@@ -19,14 +19,13 @@ package org.jetbrains.kotlin.effectsystem.adapters
 import org.jetbrains.kotlin.builtins.DefaultBuiltIns
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.effectsystem.functors.*
-import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
 import org.jetbrains.kotlin.effectsystem.structure.calltree.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.calls.model.ExpressionValueArgument
-import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 import org.jetbrains.kotlin.resolve.constants.CompileTimeConstant
@@ -36,7 +35,11 @@ import org.jetbrains.kotlin.utils.ifEmpty
 /**
  * Visits Psi-tree and builds Call Tree
  */
-class CallTreeBuilder(val bindingContext: BindingContext, val moduleDescriptor: ModuleDescriptor) : KtVisitor<CTNode, Unit>() {
+class CallTreeBuilder(
+        private val bindingContext: BindingContext,
+        private val moduleDescriptor: ModuleDescriptor,
+        private val functorResolver: FunctorResolver
+) : KtVisitor<CTNode, Unit>() {
 
     override fun visitKtElement(element: KtElement, data: Unit?): CTNode = UNKNOWN_CALL
 
@@ -73,8 +76,8 @@ class CallTreeBuilder(val bindingContext: BindingContext, val moduleDescriptor: 
             (it as? ExpressionValueArgument)?.valueArgument?.getArgumentExpression()?.accept(this, data) ?: return UNKNOWN_CALL
         } ?: return UNKNOWN_CALL
 
-        val resolvedFunctor = resolveFunctor(resolvedCall)
-        return CTCall(resolvedFunctor, listOf(receiver) + argNodes)
+        val functor = functorResolver.resolveFunctor(resolvedCall) ?: return UNKNOWN_CALL
+        return CTCall(functor, listOf(receiver) + argNodes)
     }
 
     override fun visitThisExpression(expression: KtThisExpression, data: Unit?): CTNode {
@@ -101,14 +104,14 @@ class CallTreeBuilder(val bindingContext: BindingContext, val moduleDescriptor: 
 
     override fun visitCallExpression(expression: KtCallExpression, data: Unit): CTCall {
         val resolvedCall = expression.getResolvedCall(bindingContext) ?: return UNKNOWN_CALL
-        val resolvedFunctor = resolveFunctor(resolvedCall)
+        val functor = functorResolver.resolveFunctor(resolvedCall) ?: return UNKNOWN_CALL
 
         val argNodes = resolvedCall.valueArgumentsByIndex?.map {
             (it as? ExpressionValueArgument)?.valueArgument?.getArgumentExpression()?.accept(this, data) ?: return UNKNOWN_CALL
         } ?: return UNKNOWN_CALL
 
 
-        return CTCall(resolvedFunctor, argNodes)
+        return CTCall(functor, argNodes)
     }
 
     override fun visitReferenceExpression(expression: KtReferenceExpression, data: Unit?): CTNode = tryCreateVariable(expression)
@@ -144,9 +147,6 @@ class CallTreeBuilder(val bindingContext: BindingContext, val moduleDescriptor: 
         val dfv = expression.createDataFlowValue() ?: return UNKNOWN_CALL
         return CTVariable(ValueIdsFactory.dfvBased(dfv), dfv.type)
     }
-
-    private fun resolveFunctor(resolvedCall: ResolvedCall<*>): ESFunctor =
-            FunctorsResolver().resolve(resolvedCall)
 
     private val UNKNOWN_CALL = CTCall(UnknownFunctor, listOf())
 }

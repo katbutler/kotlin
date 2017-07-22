@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.effectsystem.effects.ESCalls
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.effects.ESThrows
 import org.jetbrains.kotlin.effectsystem.factories.lift
+import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
 import org.jetbrains.kotlin.effectsystem.visitors.Reducer
 import org.jetbrains.kotlin.effectsystem.visitors.SchemaBuilder
 import org.jetbrains.kotlin.psi.KtCallExpression
@@ -37,6 +38,7 @@ import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 
 object EffectSystem {
+    private val functorResolver = FunctorResolver()
 
     fun getResultDFI(
             resolvedCall: ResolvedCall<*>,
@@ -94,7 +96,7 @@ object EffectSystem {
     }
 
     private fun evaluateSchema(expression: KtExpression, bindingContext: BindingContext, moduleDescriptor: ModuleDescriptor): EffectSchema? {
-        val ctBuilder = CallTreeBuilder(bindingContext, moduleDescriptor)
+        val ctBuilder = CallTreeBuilder(bindingContext, moduleDescriptor, functorResolver)
         val callTree = expression.accept(ctBuilder, Unit)
 
         val esBuilder = SchemaBuilder()
