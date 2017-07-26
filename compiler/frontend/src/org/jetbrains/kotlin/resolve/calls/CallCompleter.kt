@@ -61,7 +61,8 @@ class CallCompleter(
         private val dataFlowAnalyzer: DataFlowAnalyzer,
         private val callCheckers: Iterable<CallChecker>,
         private val builtIns: KotlinBuiltIns,
-        private val languageVersionSettings: LanguageVersionSettings
+        private val languageVersionSettings: LanguageVersionSettings,
+        private val effectSystem: EffectSystem
 ) {
     fun <D : CallableDescriptor> completeCall(
             context: BasicCallResolutionContext,
@@ -402,7 +403,7 @@ class CallCompleter(
     }
 
     private fun MutableResolvedCall<*>.updateResultDFIFromEffectSystem(bindingTrace: BindingTrace) {
-        val resultDFIfromES = EffectSystem.getResultDFI(
+        val resultDFIfromES = effectSystem.getResultDFI(
                 this, bindingTrace, languageVersionSettings,
                 DescriptorUtils.getContainingModule(this.resultingDescriptor?.containingDeclaration ?: return)
         )

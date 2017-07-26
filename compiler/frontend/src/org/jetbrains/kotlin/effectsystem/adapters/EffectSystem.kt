@@ -37,7 +37,7 @@ import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 
-object EffectSystem {
+class EffectSystem {
     private val functorResolver = FunctorResolver()
 
     fun getResultDFI(
