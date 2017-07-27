@@ -68,7 +68,12 @@ internal class ProjectResolutionFacade(
     }
 
     private val moduleResolverProvider: ModuleResolverProvider
-        get() = globalContext.storageManager.compute { cachedValue.value }
+        get() = globalContext.storageManager.compute {
+            if (cachedValue.hasUpToDateValue()) {
+                println("Returning cached ModuleResolverProvider for $this")
+            }
+            cachedValue.value
+        }
 
     fun resolverForModuleInfo(moduleInfo: IdeaModuleInfo) = moduleResolverProvider.resolverForProject.resolverForModule(moduleInfo)
     fun tryGetResolverForModuleInfo(moduleInfo: IdeaModuleInfo) = moduleResolverProvider.resolverForProject.tryGetResolverForModule(moduleInfo)

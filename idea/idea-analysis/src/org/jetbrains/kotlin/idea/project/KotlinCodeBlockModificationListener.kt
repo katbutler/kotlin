@@ -95,12 +95,14 @@ class KotlinCodeBlockModificationListener(
             val newModCount = modificationTrackerImpl.outOfCodeBlockModificationCount
             val affectedModule = lastAffectedModule
             if (affectedModule != null && newModCount == lastAffectedModuleModCount + 1) {
+                println("Increasing modification count for module $affectedModule")
                 if (perModuleChangesHighwatermark== null) {
                     perModuleChangesHighwatermark = lastAffectedModuleModCount
                 }
                 perModuleModCount[affectedModule] = newModCount
             }
             else {
+                println("Increasing global modification count")
                 perModuleChangesHighwatermark = null
                 perModuleModCount.clear()
             }
@@ -170,7 +172,8 @@ val KtFile.outOfBlockModificationCount: Long
 class KotlinModuleModificationTracker(val module: Module): ModificationTracker {
     private val kotlinModCountListener = KotlinCodeBlockModificationListener.getInstance(module.project)
     private val psiModificationTracker = PsiModificationTracker.SERVICE.getInstance(module.project)
-    private val dependencies by lazy {
+
+    val dependencies by lazy {
         HashSet<Module>().apply {
             ModuleRootManager.getInstance(module).orderEntries().recursively().forEachModule(
                     CommonProcessors.CollectProcessor(this))

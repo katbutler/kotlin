@@ -167,17 +167,27 @@ class ResolverForProjectImpl<M : ModuleInfo>(
         if (module in modules) {
             return projectContext.storageManager.compute {
                 var moduleData = descriptorByModule.getOrPut(module) {
-                    createModuleDescriptor(module)
+                    createModuleDescriptor(module).apply { println("Created initial module descriptor for module $module: $moduleDescriptor") }
                 }
                 val currentModCount = moduleData.modificationTracker?.modificationCount
                 if (currentModCount != null && currentModCount > moduleData.modificationCount!!) {
                     moduleData = recreateModuleDescriptor(module)
+                    recreateDependentModuleDescriptors(module)
                 }
                 moduleData.moduleDescriptor
             }
         }
 
         return delegateResolver.descriptorForModule(module) as ModuleDescriptorImpl
+    }
+
+    private fun recreateDependentModuleDescriptors(baseModule: M) {
+        val modulesToRecreate = descriptorByModule.keys.filter { module ->
+            module != baseModule && baseModule in module.dependencies()
+        }
+        for (module in modulesToRecreate) {
+            recreateModuleDescriptor(module)
+        }
     }
 
     private fun recreateModuleDescriptor(module: M): ModuleData {
@@ -189,6 +199,7 @@ class ResolverForProjectImpl<M : ModuleInfo>(
         }
 
         val moduleData = createModuleDescriptor(module)
+        println("Recreated module descriptor for $module from $oldDescriptor  to ${moduleData.moduleDescriptor}")
         descriptorByModule[module] = moduleData
         return moduleData
     }
@@ -270,6 +281,7 @@ class LazyModuleDependencies<M: ModuleInfo>(
 ) : ModuleDependencies {
     private val dependencies = storageManager.createLazyValue {
         val moduleDescriptor = resolverForProject.descriptorForModule(module)
+        println("Evaluating dependencies for $moduleDescriptor")
         buildSequence {
             if (firstDependency != null) {
                 yield(resolverForProject.descriptorForModule(firstDependency))

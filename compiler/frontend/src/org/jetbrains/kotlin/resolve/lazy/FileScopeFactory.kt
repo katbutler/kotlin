@@ -53,6 +53,10 @@ class FileScopeFactory(
         private val defaultImportProvider: DefaultImportProvider,
         private val languageVersionSettings: LanguageVersionSettings
 ) {
+    init {
+        println("Creating FileScopeFactory $this for module $moduleDescriptor")
+    }
+
     /* avoid constructing psi for default imports prematurely (time consuming in some scenarios) */
     private val defaultImports by storageManager.createLazyValue {
         ktImportsFactory.createImportDirectives(defaultImportProvider.defaultImports)
@@ -117,6 +121,7 @@ class FileScopeFactory(
 
 
         fun createImportingScope(): LazyImportScope {
+            println("Creating importing scope in ${this@FileScopeFactory}")
             val tempTrace = TemporaryBindingTrace.create(bindingTrace, "Transient trace for default imports lazy resolve", false)
 
             val extraImports = file.originalFile.virtualFile?.let { vFile ->
