@@ -20,22 +20,18 @@ import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.effectsystem.structure.ESEffect
 import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
-import org.jetbrains.kotlin.effectsystem.effects.ESCalls
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.effects.ESThrows
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
 import org.jetbrains.kotlin.effectsystem.visitors.Reducer
 import org.jetbrains.kotlin.effectsystem.visitors.SchemaBuilder
-import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 
 class EffectSystem {
     private val functorResolver = FunctorResolver()
@@ -46,10 +42,9 @@ class EffectSystem {
             languageVersionSettings: LanguageVersionSettings,
             moduleDescriptor: ModuleDescriptor
     ): DataFlowInfo {
-        val call = resolvedCall.call.callElement as? KtExpression ?: return DataFlowInfo.EMPTY
-        if (call is KtDeclaration) return DataFlowInfo.EMPTY
-        if (call.parent is KtCallExpression) return DataFlowInfo.EMPTY
-        return getDFIWhenNot(ESThrows(null), call,
+        val callExpression = resolvedCall.call.callElement as? KtExpression ?: return DataFlowInfo.EMPTY
+        if (callExpression is KtDeclaration) return DataFlowInfo.EMPTY
+        return getDFIWhenNot(ESThrows(null), callExpression,
                              bindingTrace, languageVersionSettings, moduleDescriptor)
     }
 
@@ -88,11 +83,20 @@ class EffectSystem {
             languageVersionSettings: LanguageVersionSettings,
             moduleDescriptor: ModuleDescriptor
     ): DataFlowInfo {
-        val schema = evaluateSchema(expression, bindingTrace.bindingContext, moduleDescriptor) ?: return DataFlowInfo.EMPTY
+        val schema = getSchema(expression, bindingTrace, moduleDescriptor) ?: return DataFlowInfo.EMPTY
 
         val extractedContextInfo = InfoCollector(notObservedEffect).collectFromSchema(schema)
 
         return extractedContextInfo.toDataFlowInfo(languageVersionSettings)
+    }
+
+    private fun getSchema(expression: KtExpression, bindingTrace: BindingTrace, moduleDescriptor: ModuleDescriptor): EffectSchema? {
+        if (bindingTrace[BindingContext.EXPRESSION_EFFECTS, expression] == null) {
+            val evaluatedSchema = evaluateSchema(expression, bindingTrace.bindingContext, moduleDescriptor) ?: return null
+            bindingTrace.record(BindingContext.EXPRESSION_EFFECTS, expression, evaluatedSchema)
+        }
+
+        return bindingTrace[BindingContext.EXPRESSION_EFFECTS, expression]
     }
 
     private fun evaluateSchema(expression: KtExpression, bindingContext: BindingContext, moduleDescriptor: ModuleDescriptor): EffectSchema? {

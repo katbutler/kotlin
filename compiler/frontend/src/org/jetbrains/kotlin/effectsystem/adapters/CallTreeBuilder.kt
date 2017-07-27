@@ -20,6 +20,8 @@ import org.jetbrains.kotlin.builtins.DefaultBuiltIns
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.effectsystem.functors.*
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
+import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 import org.jetbrains.kotlin.effectsystem.structure.calltree.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -61,6 +63,8 @@ class CallTreeBuilder(
             expression.expression?.accept(this, data) ?: UNKNOWN_CALL
 
     override fun visitUnaryExpression(expression: KtUnaryExpression, data: Unit): CTCall {
+        tryGetCachedCall(expression)?.let { return it }
+
         val argNode = expression.baseExpression?.accept(this, data) ?: return UNKNOWN_CALL
         return when (expression.operationToken) {
             KtTokens.EXCL -> CTCall(NotFunctor(), listOf(argNode))
@@ -69,6 +73,8 @@ class CallTreeBuilder(
     }
 
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression, data: Unit): CTNode {
+        tryGetCachedCall(expression)?.let { return it }
+
         val receiver = expression.receiverExpression.accept(this, data)
 
         val resolvedCall = expression.selectorExpression.getResolvedCall(bindingContext) ?: return UNKNOWN_CALL
@@ -90,6 +96,8 @@ class CallTreeBuilder(
     override fun visitLabeledExpression(expression: KtLabeledExpression, data: Unit): CTNode = expression.baseExpression?.accept(this, data) ?: UNKNOWN_CALL
 
     override fun visitBinaryExpression(expression: KtBinaryExpression, data: Unit): CTCall {
+        tryGetCachedCall(expression)?.let { return it }
+
         val leftNode = expression.left?.accept(this, data) ?: return UNKNOWN_CALL
         val rightNode = expression.right?.accept(this, data) ?: return UNKNOWN_CALL
         val functor = when (expression.operationToken) {
@@ -103,6 +111,8 @@ class CallTreeBuilder(
     }
 
     override fun visitCallExpression(expression: KtCallExpression, data: Unit): CTCall {
+        tryGetCachedCall(expression)?.let { return it }
+
         val resolvedCall = expression.getResolvedCall(bindingContext) ?: return UNKNOWN_CALL
         val functor = functorResolver.resolveFunctor(resolvedCall) ?: return UNKNOWN_CALL
 
@@ -117,6 +127,8 @@ class CallTreeBuilder(
     override fun visitReferenceExpression(expression: KtReferenceExpression, data: Unit?): CTNode = tryCreateVariable(expression)
 
     override fun visitIsExpression(expression: KtIsExpression, data: Unit): CTCall {
+        tryGetCachedCall(expression)?.let { return it }
+
         val leftNode = expression.leftHandSide.accept(this, data)
         val rightType: KotlinType = bindingContext.get(BindingContext.TYPE, expression.typeReference) ?: return UNKNOWN_CALL
         val functor = IsFunctor(rightType, expression.isNegated)
@@ -146,6 +158,14 @@ class CallTreeBuilder(
     private fun tryCreateVariable(expression: KtExpression): CTNode {
         val dfv = expression.createDataFlowValue() ?: return UNKNOWN_CALL
         return CTVariable(ValueIdsFactory.dfvBased(dfv), dfv.type)
+    }
+
+    private fun tryGetCachedCall(expression: KtExpression): CTCall? {
+        val cachedSchema = bindingContext[BindingContext.EXPRESSION_EFFECTS, expression] ?: return null
+        // return call with functor that just returns cached schema on 'apply'
+        return CTCall(object : ESFunctor {
+            override fun apply(arguments: List<EffectSchema>): EffectSchema? = cachedSchema
+        }, listOf())
     }
 
     private val UNKNOWN_CALL = CTCall(UnknownFunctor, listOf())
