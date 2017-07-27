@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.ESClause
 
 class EqualFunctor(val isNegated: Boolean) : AbstractSequentialBinaryFunctor() {
-    override fun combineClauses(left: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>, right: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> {
+    override fun combineClauses(left: List<ESClause>, right: List<ESClause>): List<ESClause> {
         return left.flatMap { leftClause ->
              right.flatMap inner@ { rightClause ->
                 val combinedPremise = leftClause.condition.and(rightClause.condition)

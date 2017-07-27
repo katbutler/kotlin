@@ -21,9 +21,10 @@ import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.impls.and
 import org.jetbrains.kotlin.effectsystem.impls.or
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
 
 class OrFunctor : AbstractSequentialBinaryFunctor() {
-    override fun combineClauses(left: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>, right: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> {
+    override fun combineClauses(left: List<ESClause>, right: List<ESClause>): List<ESClause> {
         /* Normally, `left` and `right` contain clauses that end with Returns(false/true), but if
          expression wasn't properly typechecked, we could get some senseless clauses here, e.g.
          with Returns(1) (note that they still *return* as guaranteed by AbstractSequentialBinaryFunctor).
@@ -32,11 +33,10 @@ class OrFunctor : AbstractSequentialBinaryFunctor() {
         val (leftTrue, leftFalse) = left.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
         val (rightTrue, rightFalse) = right.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
 
-        val leftTrueFolded = foldConclusionsWithOr(leftTrue)
-        val rightTrueFolded = foldConclusionsWithOr(rightTrue)
-        val leftFalseFolded = foldConclusionsWithOr(leftFalse)
-        val rightFalseFolded = foldConclusionsWithOr(rightFalse)
-
+        val leftTrueFolded = foldConditionsWithOr(leftTrue)
+        val rightTrueFolded = foldConditionsWithOr(rightTrue)
+        val leftFalseFolded = foldConditionsWithOr(leftFalse)
+        val rightFalseFolded = foldConditionsWithOr(rightFalse)
 
         val returnsTrue = ClausesFactory.create(
                 premise = leftTrueFolded.or(rightTrueFolded),

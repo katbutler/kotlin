@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.effectsystem.impls.or
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.*
 
-internal fun foldConclusionsWithOr(list: List<ESClause>) =
+internal fun foldConditionsWithOr(list: List<ESClause>) =
         list.fold(false.lift() as ESBooleanExpression) { acc, esClause -> acc.or(esClause.condition) }
 
 /**
