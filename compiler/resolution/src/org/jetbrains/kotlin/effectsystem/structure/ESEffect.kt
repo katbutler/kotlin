@@ -16,6 +16,9 @@
 
 package org.jetbrains.kotlin.effectsystem.structure
 
+import org.jetbrains.kotlin.effectsystem.effects.ESReturns
+import org.jetbrains.kotlin.effectsystem.factories.lift
+
 interface ESEffect {
     /**
      * Returns:
@@ -25,3 +28,5 @@ interface ESEffect {
      */
     fun isImplies(other: ESEffect): Boolean?
 }
+
+fun ESEffect.doesReturn(booleanValue: Boolean) = this is ESReturns && this.value == booleanValue.lift()

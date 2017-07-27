@@ -38,7 +38,7 @@ class ThrowsFunctorParser : FunctorParser {
         val condition = conditionParser.parseCondition(resolvedCall) ?: return null
 
         return if (resolvedCall.resultingDescriptor.annotations.hasAnnotation(THROWS_EFFECT))
-            EffectSchemasFactory.singleClause(condition, listOf(ESThrows(null)), getParameters(resolvedCall))
+            EffectSchemasFactory.singleClause(condition, ESThrows(null), getParameters(resolvedCall))
         else
             null
     }

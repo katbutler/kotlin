@@ -34,15 +34,12 @@ class Reducer : ESExpressionVisitor<ESExpression?> {
             , listOf())
 
     fun reduceClause(clause: org.jetbrains.kotlin.effectsystem.structure.ESClause): org.jetbrains.kotlin.effectsystem.structure.ESClause? {
-        // Filter empty clauses
-        if (clause.conclusion.isEmpty()) return null
-
-        val reducedPremise = clause.premise.accept(this) as ESBooleanExpression
+        val reducedPremise = clause.condition.accept(this) as ESBooleanExpression
 
         // Filter never executed premises
         if (reducedPremise is ESBooleanConstant && !reducedPremise.value) return null
 
-        return ESClause(reducedPremise, clause.conclusion)
+        return ESClause(reducedPremise, clause.effect)
     }
 
     override fun visitIs(isOperator: ESIs): ESBooleanExpression {

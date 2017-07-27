@@ -21,27 +21,24 @@ import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESEqual
 import org.jetbrains.kotlin.effectsystem.impls.and
 import org.jetbrains.kotlin.effectsystem.factories.lift
-import org.jetbrains.kotlin.effectsystem.structure.getOutcome
-import org.jetbrains.kotlin.effectsystem.structure.withoutReturns
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
 
 class EqualFunctor(val isNegated: Boolean) : AbstractSequentialBinaryFunctor() {
     override fun combineClauses(left: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>, right: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> {
         return left.flatMap { leftClause ->
              right.flatMap inner@ { rightClause ->
-                val combinedPremise = leftClause.premise.and(rightClause.premise)
+                val combinedPremise = leftClause.condition.and(rightClause.condition)
 
-                val leftValue = (leftClause.conclusion.getOutcome() as ESReturns).value
-                val rightValue = (rightClause.conclusion.getOutcome() as ESReturns).value
-
-                val combinedRest = leftClause.conclusion.withoutReturns() + rightClause.conclusion.withoutReturns()
+                val leftValue = (leftClause.effect as ESReturns).value
+                val rightValue = (rightClause.effect as ESReturns).value
 
                 val trueResult = ClausesFactory.create(
                         premise = combinedPremise.and(ESEqual(leftValue, rightValue, this)),
-                        conclusion = combinedRest + ESReturns(true.lift())
+                        conclusion = ESReturns(true.lift())
                 )
                 val falseResult = ClausesFactory.create(
                         premise = combinedPremise.and(ESEqual(leftValue, rightValue, negated())),
-                        conclusion = combinedRest + ESReturns(false.lift())
+                        conclusion = ESReturns(false.lift())
                 )
 
                 return@inner listOf(trueResult, falseResult)

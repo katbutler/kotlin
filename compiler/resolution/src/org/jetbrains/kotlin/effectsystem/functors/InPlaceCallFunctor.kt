@@ -33,14 +33,13 @@ class InPlaceCallFunctor(val invocationCount: ESCalls.InvocationCount, private v
         val callableProvider = arguments.zip(relevantParametersMask).single { it.second }.first
 
         return EffectSchemasFactory.clauses(callableProvider.clauses.map { clause ->
-            val outcome = clause.conclusion.getOutcome()
-            if (outcome == null || outcome is ESThrows) return@map clause
+            val outcome = clause.effect as? ESReturns ?: return@map clause
 
             // If cast fails, it means that something is wrong with types
-            val variable = (outcome as ESReturns).value as? ESVariable ?: return null
+            val variable = outcome.value as? ESVariable ?: return null
 
             val newEffect = ESCalls(variable, invocationCount)
-            return@map clause.withoutReturns().withEffect(newEffect)
+            return@map clause.replaceEffect(newEffect)
         }, listOf())
     }
 }

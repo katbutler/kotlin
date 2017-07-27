@@ -16,39 +16,17 @@
 
 package org.jetbrains.kotlin.effectsystem.structure
 
-import org.jetbrains.kotlin.effectsystem.effects.ESReturns
-import org.jetbrains.kotlin.effectsystem.effects.ESThrows
-import org.jetbrains.kotlin.effectsystem.factories.lift
-
 /**
  * Description of some set of effects and corresponding to them conditions
  *
- * [premise] is some expression, which result-type is Boolean. Clause should be
- * interpreted as: "if [premise] is true then effects of [conclusion] are fired"
+ * [condition] is some expression, which result-type is Boolean. Clause should be
+ * interpreted as: "if [effect] took place then [condition]-expression is true"
  *
- * NB. [premise] and [conclusion] connected with implication in math logic sense,
+ * NB. [condition] and [effect] connected with implication in math logic sense,
  * which in particular means that:
- *  - if [premise] is false, we *can't* reason that we won't observe effects from [conclusion]
- *  - if [conclusion] is observed, we *can't* reason that [premise] was true
+ *  - if [condition] is false, we *can't* reason that we won't observe effects from [effect]
+ *  - if [effect] is observed, we *can't* reason that [condition] was true
  */
-class ESClause(val premise: ESBooleanExpression, val conclusion: List<ESEffect>)
-
-// Clause extensions
-fun ESClause.withoutReturns(): ESClause = ESClause(premise, conclusion.withoutReturns())
-
-fun ESClause.withEffect(effect: ESEffect): ESClause = ESClause(premise, conclusion + effect)
-
-
-// Conclusion extensions
-fun List<ESEffect>.getOutcome(): ESEffect? = find { it is ESReturns || it is ESThrows }
-
-fun List<ESEffect>.throws(): Boolean = any { it is ESThrows }
-
-fun List<ESEffect>.returns(): Boolean = any { it is ESReturns }
-
-fun List<ESEffect>.withoutReturns(): List<ESEffect> = filterNot { it is ESReturns }
-
-fun List<ESEffect>.doesReturn(booleanValue: Boolean) = contains(ESReturns(booleanValue.lift()))
-
-fun List<ESEffect>.extractOutcome(): Pair<ESEffect?, List<ESEffect>> =
-        find { it is ESReturns || it is ESThrows } to filterNot { it is ESReturns || it is ESThrows }
+class ESClause(val condition: ESBooleanExpression, val effect: ESEffect) {
+    fun replaceEffect(newEffect: ESEffect) = ESClause(condition, effect)
+}

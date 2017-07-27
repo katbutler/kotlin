@@ -61,13 +61,13 @@ class MutableContextInfo private constructor(
         return this
     }
 
-    fun fire(effects: List<ESEffect>): MutableContextInfo {
-        firedEffects += effects
+    fun fire(effect: ESEffect): MutableContextInfo {
+        firedEffects += effect
         return this
     }
 
-    fun deny(effects: List<ESEffect>): MutableContextInfo {
-        deniedEffects += effects
+    fun deny(effect: ESEffect): MutableContextInfo {
+        deniedEffects += effect
         return this
     }
 

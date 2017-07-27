@@ -23,6 +23,6 @@ import org.jetbrains.kotlin.effectsystem.structure.*
 
 object EffectSchemasFactory {
     fun pureReturns(value: ESValue): EffectSchema = clauses(listOf(ClausesFactory.always(ESReturns(value))), listOf())
-    fun singleClause(premise: ESBooleanExpression, effects: List<ESEffect>, variables: List<ESVariable>) = clauses(listOf(ClausesFactory.create(premise, effects)), variables)
+    fun singleClause(premise: ESBooleanExpression, effect: ESEffect, variables: List<ESVariable>) = clauses(listOf(ClausesFactory.create(premise, effect)), variables)
     fun clauses(clauses: List<ESClause>, params: List<ESVariable>): EffectSchema = EffectSchemaImpl(clauses, params)
 }

@@ -33,18 +33,18 @@ class InfoCollector(private val notObservedEffect: ESEffect) : ESExpressionVisit
             schema.clauses.mapNotNull { collectFromClause(it) }.fold(MutableContextInfo.EMPTY, { resultingInfo, clauseInfo -> resultingInfo.and(clauseInfo) })
 
     private fun collectFromClause(clause: ESClause): MutableContextInfo? {
-        val premise = clause.premise
+        val premise = clause.condition
         if (premise is ESBooleanConstant) {
             return if (premise.value)
-                MutableContextInfo.EMPTY.fire(clause.conclusion)
+                MutableContextInfo.EMPTY.fire(clause.effect)
             else
-                MutableContextInfo.EMPTY.deny(clause.conclusion)
+                MutableContextInfo.EMPTY.deny(clause.effect)
         }
 
-        // Otherwise, check if we can claim that premise couldn't be true
+        // Otherwise, check if we can claim that condition couldn't be true
         return when (clause.isImplies(notObservedEffect)) {
-            // Clause implies effect, but it wasn't observed => this clause's premise couldn't be true
-            true -> inverted { clause.premise.accept(this) }
+            // Clause implies effect, but it wasn't observed => this clause's condition couldn't be true
+            true -> inverted { clause.condition.accept(this) }
             // This clause *may* or *doesn't* implies effect, thus it doesn't bring any useful information
             null, false -> null
         }
@@ -102,7 +102,7 @@ class InfoCollector(private val notObservedEffect: ESEffect) : ESExpressionVisit
         return result
     }
 
-    private fun ESClause.isImplies(effect: ESEffect): Boolean? = conclusion.any { it.isImplies(effect) ?: return null }
+    private fun ESClause.isImplies(effect: ESEffect): Boolean? = this.effect.isImplies(effect)
 
     companion object {
         fun EffectSchema.collectContextInfo(notObservedEffect: ESEffect): MutableContextInfo = InfoCollector(notObservedEffect).collectFromSchema(this)

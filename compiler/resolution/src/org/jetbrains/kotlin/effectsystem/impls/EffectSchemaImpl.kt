@@ -18,42 +18,40 @@ package org.jetbrains.kotlin.effectsystem.impls
 
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.effects.ESThrows
+import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
+import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.*
 import org.jetbrains.kotlin.effectsystem.visitors.Substitutor
 
 class EffectSchemaImpl(override val clauses: List<ESClause>, val parameters: List<ESVariable>) : EffectSchema {
     override fun apply(arguments: List<EffectSchema>): EffectSchema? {
-        // Filter argument's clauses that will transparently lift through the application
+        // Effect Schema as functor can contain pretty trivial operators (see ESOperator), which are all work only
+        // with sequential effects. All other effects transparently lift through application.
+
+        // Here we make list of clauses that end with non-sequential effects. They will be added to result as-is
         val irrelevantClauses = arguments.flatMap { schema ->
             schema.clauses.filter { clause ->
-                clause.conclusion.all { it !is ESReturns && it !is ESThrows }
+                clause.effect !is ESReturns && clause.effect !is ESThrows
             }
         }
 
-        // Build a pack of arguments schemas with only relevant clauses
+        // Here we transform arguments so that they contain only relevant clauses (i.e. those that end with sequential effect)
+        // Those clauses should be combined properly using schema's structure
         val filteredArgs = arguments.map { schema ->
-            EffectSchemasFactory.clauses(schema.clauses.filter { it.conclusion.any { it is ESReturns || it is ESThrows } }, listOf())
+            EffectSchemasFactory.clauses(schema.clauses.filter { it.effect is ESReturns || it.effect is ESThrows }, listOf())
         }
         val substs = parameters.zip(filteredArgs).toMap()
 
         val combinedClauses = mutableListOf<ESClause>()
         for (clause in clauses) {
-            // Recurse and join results
-            val substitutedPremise = clause.premise.accept(Substitutor(substs)) ?: continue
+            // Substitute all args in condition
+            val substitutedPremise = clause.condition.accept(Substitutor(substs)) ?: continue
 
-            substitutedPremise.clauses.forEach {
-                when {
-                    it.conclusion.doesReturn(true) ->
-                        // Left returns true, add clause without left Returns and with right-effects
-                        combinedClauses += ESClause(it.premise, (it.conclusion.withoutReturns() + clause.conclusion))
+            for (substitutedClause in substitutedPremise.clauses) {
+                if (substitutedClause.effect is ESThrows) combinedClauses += substitutedClause
 
-                    it.conclusion.doesReturn(false) ->
-                        // Left returns false, add clause without left Returns and without right-effects
-                        combinedClauses += ESClause(it.premise, it.conclusion.withoutReturns())
-
-                    it.conclusion.throws() -> combinedClauses += it
-                }
+                if (substitutedClause.effect == ESReturns(true.lift())) combinedClauses += ClausesFactory.create(substitutedClause.condition, clause.effect)
             }
         }
 

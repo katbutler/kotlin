@@ -42,7 +42,7 @@ class ReturnsFunctorParser : FunctorParser {
         val returnsAnnotation = resolvedCall.resultingDescriptor.annotations.findAnnotation(RETURNS_EFFECT) ?: return null
         val returnsArg = constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: return null
 
-        return EffectSchemasFactory.singleClause(condition, listOf(ESReturns(returnsArg)), getParameters(resolvedCall))
+        return EffectSchemasFactory.singleClause(condition, ESReturns(returnsArg), getParameters(resolvedCall))
     }
 
     private fun getParameters(resolvedCall: ResolvedCall<*>): List<ESVariable> {

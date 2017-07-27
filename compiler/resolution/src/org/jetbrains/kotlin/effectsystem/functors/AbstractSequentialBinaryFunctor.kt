@@ -16,11 +16,11 @@
 
 package org.jetbrains.kotlin.effectsystem.functors
 
-import org.jetbrains.kotlin.effectsystem.structure.ESClause
-import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
-import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
-import org.jetbrains.kotlin.effectsystem.structure.returns
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
+import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 
 /**
  * Binary functor that has sequential semantics, i.e. it won't apply to
@@ -36,8 +36,8 @@ abstract class AbstractSequentialBinaryFunctor : ESFunctor {
     }
 
     fun apply(left: EffectSchema, right: EffectSchema): EffectSchema? {
-        val (leftReturning, leftRest) = left.clauses.partition { it.conclusion.returns() }
-        val (rightReturning, rightRest) = right.clauses.partition { it.conclusion.returns() }
+        val (leftReturning, leftRest) = left.clauses.partition { it.effect is ESReturns }
+        val (rightReturning, rightRest) = right.clauses.partition { it.effect is ESReturns }
 
         // Traces that evaluated both arguments and went to the functor
         val evaluatedByFunctor = combineClauses(leftReturning, rightReturning)

@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.*
 
 internal fun foldConclusionsWithOr(list: List<ESClause>) =
-        list.fold(false.lift() as ESBooleanExpression) { acc, esClause -> acc.or(esClause.premise) }
+        list.fold(false.lift() as ESBooleanExpression) { acc, esClause -> acc.or(esClause.condition) }
 
 /**
  * Places all clauses that equal to `firstModel` into first list, and all clauses that equal to `secondModel` into second list
@@ -31,10 +31,8 @@ internal fun List<ESClause>.partitionByOutcome(firstModel: ESEffect, secondModel
     val second = mutableListOf<ESClause>()
 
     forEach {
-        val outcome = it.conclusion.getOutcome()
-
-        if (outcome == firstModel) first += it
-        if (outcome == secondModel) second += it
+        if (it.effect == firstModel) first += it
+        if (it.effect == secondModel) second += it
     }
 
     return first to second

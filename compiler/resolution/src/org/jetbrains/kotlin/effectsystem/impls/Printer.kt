@@ -47,9 +47,9 @@ class Printer : ESExpressionVisitor<Unit> {
 
     fun visitClause(clause: ESClause) {
         line {
-            clause.premise.accept(this)
+            clause.condition.accept(this)
             print(" -> ")
-            print(clause.conclusion.joinToString())
+            print(clause.effect.toString())
         }
     }
 

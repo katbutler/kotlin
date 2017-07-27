@@ -16,11 +16,11 @@
 
 package org.jetbrains.kotlin.effectsystem.functors
 
-import org.jetbrains.kotlin.effectsystem.structure.ESClause
-import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
-import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
-import org.jetbrains.kotlin.effectsystem.structure.returns
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
+import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
+import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 
 
 /**
@@ -37,7 +37,7 @@ abstract class AbstractSequentialUnaryFunctor : ESFunctor {
     }
 
     fun apply(arg: EffectSchema): EffectSchema? {
-        val (returning, rest) = arg.clauses.partition { it.conclusion.returns() }
+        val (returning, rest) = arg.clauses.partition { it.effect is ESReturns }
 
         val evaluatedByFunctor = combineClauses(returning)
 

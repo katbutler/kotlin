@@ -21,17 +21,17 @@ import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESIs
 import org.jetbrains.kotlin.effectsystem.impls.and
 import org.jetbrains.kotlin.effectsystem.factories.lift
-import org.jetbrains.kotlin.effectsystem.structure.extractOutcome
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
 import org.jetbrains.kotlin.types.KotlinType
 
 class IsFunctor(val type: KotlinType, val isNegated: Boolean) : AbstractSequentialUnaryFunctor() {
-    override fun combineClauses(list: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> = list.flatMap {
-        val (outcome, rest) = it.conclusion.extractOutcome()
-        val premise = it.premise
+    override fun combineClauses(list: List<ESClause>): List<ESClause> = list.flatMap {
+        val outcome = it.effect as ESReturns
+        val premise = it.condition
 
         // Cast to ESReturns should succeed as per AbstractSequentialUnaryFunctor contract
-        val trueResult = ClausesFactory.create(premise.and(ESIs((outcome as ESReturns).value, this)), rest + ESReturns(true.lift()))
-        val falseResult = ClausesFactory.create(premise.and(ESIs(outcome.value, negated())), rest + ESReturns(false.lift()))
+        val trueResult = ClausesFactory.create(premise.and(ESIs(outcome.value, this)), ESReturns(true.lift()))
+        val falseResult = ClausesFactory.create(premise.and(ESIs(outcome.value, negated())), ESReturns(false.lift()))
         return listOf(trueResult, falseResult)
     }
 

@@ -20,18 +20,18 @@ import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESBooleanConstant
 import org.jetbrains.kotlin.effectsystem.impls.not
-import org.jetbrains.kotlin.effectsystem.structure.extractOutcome
+import org.jetbrains.kotlin.effectsystem.structure.ESClause
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 
 class NotFunctor : AbstractSequentialUnaryFunctor() {
-    override fun combineClauses(list: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> = list.mapNotNull {
-        val (outcome, rest) = it.conclusion.extractOutcome()
+    override fun combineClauses(list: List<ESClause>): List<ESClause> = list.mapNotNull {
+        val outcome = it.effect
 
         // Outcome guaranteed to be Returns by AbstractSequentialUnaryFunctor, but cast
-        // to boolean constant can fail in case of type-errors in the whole expreesion,
+        // to boolean constant can fail in case of type-errors in the whole expression,
         // like "foo(bar) && 1"
         val booleanValue = outcome.cast<ESReturns>().value as? ESBooleanConstant ?: return@mapNotNull null
 
-        return@mapNotNull ClausesFactory.create(it.premise, rest + ESReturns(booleanValue.not()))
+        return@mapNotNull ClausesFactory.create(it.condition, ESReturns(booleanValue.not()))
     }
 }

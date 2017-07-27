@@ -18,10 +18,9 @@ package org.jetbrains.kotlin.effectsystem.functors
 
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
+import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.impls.and
 import org.jetbrains.kotlin.effectsystem.impls.or
-import org.jetbrains.kotlin.effectsystem.factories.lift
-import org.jetbrains.kotlin.effectsystem.structure.withoutReturns
 
 class OrFunctor : AbstractSequentialBinaryFunctor() {
     override fun combineClauses(left: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>, right: List<org.jetbrains.kotlin.effectsystem.structure.ESClause>): List<org.jetbrains.kotlin.effectsystem.structure.ESClause> {
@@ -38,16 +37,15 @@ class OrFunctor : AbstractSequentialBinaryFunctor() {
         val leftFalseFolded = foldConclusionsWithOr(leftFalse)
         val rightFalseFolded = foldConclusionsWithOr(rightFalse)
 
-        val combinedEffects = left.flatMap { it.conclusion.withoutReturns() } + right.flatMap { it.conclusion.withoutReturns() }
 
         val returnsTrue = ClausesFactory.create(
                 premise = leftTrueFolded.or(rightTrueFolded),
-                conclusion = combinedEffects + ESReturns(true.lift())
+                conclusion = ESReturns(true.lift())
         )
 
         val returnsFalse = ClausesFactory.create(
                 premise = leftFalseFolded.and(rightFalseFolded),
-                conclusion = combinedEffects + ESReturns(false.lift())
+                conclusion = ESReturns(false.lift())
         )
 
         return listOf(returnsTrue, returnsFalse)

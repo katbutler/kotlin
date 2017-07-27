@@ -21,6 +21,6 @@ import org.jetbrains.kotlin.effectsystem.structure.ESClause
 import org.jetbrains.kotlin.effectsystem.structure.ESEffect
 
 object ClausesFactory {
-    fun always(vararg effects: ESEffect): ESClause = ESClause(true.lift(), effects.asList())
-    fun create(premise: ESBooleanExpression, conclusion: List<ESEffect>) = ESClause(premise, conclusion)
+    fun always(effect: ESEffect): ESClause = ESClause(true.lift(), effect)
+    fun create(premise: ESBooleanExpression, conclusion: ESEffect) = ESClause(premise, conclusion)
 }
