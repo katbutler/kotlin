@@ -18,5 +18,5 @@ package org.jetbrains.kotlin.effectsystem.resolving.utility
 
 object UtilityParsers {
     val conditionParser = ConditionParser()
-    val constsantsParser = ConstantsParser()
+    val constantsParser = ConstantsParser()
 }

@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESVariable
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorParser
 import org.jetbrains.kotlin.effectsystem.resolving.utility.ConditionParser
+import org.jetbrains.kotlin.effectsystem.resolving.utility.UtilityParsers
 import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
@@ -31,11 +32,10 @@ import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
 import org.jetbrains.kotlin.resolve.calls.smartcasts.IdentifierInfo
 
 class ThrowsFunctorParser : FunctorParser {
-    private val conditionParser = ConditionParser()
     private val THROWS_EFFECT = FqName("kotlin.internal.Throws")
 
     override fun tryParseFunctor(resolvedCall: ResolvedCall<*>): ESFunctor? {
-        val condition = conditionParser.parseCondition(resolvedCall) ?: return null
+        val condition = UtilityParsers.conditionParser.parseCondition(resolvedCall) ?: return null
 
         return if (resolvedCall.resultingDescriptor.annotations.hasAnnotation(THROWS_EFFECT))
             EffectSchemasFactory.singleClause(condition, ESThrows(null), getParameters(resolvedCall))

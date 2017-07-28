@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.effectsystem.impls.ESVariable
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorParser
 import org.jetbrains.kotlin.effectsystem.resolving.utility.ConditionParser
 import org.jetbrains.kotlin.effectsystem.resolving.utility.ConstantsParser
+import org.jetbrains.kotlin.effectsystem.resolving.utility.UtilityParsers
 import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
@@ -32,15 +33,13 @@ import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
 import org.jetbrains.kotlin.resolve.calls.smartcasts.IdentifierInfo
 
 class ReturnsFunctorParser : FunctorParser {
-    private val conditionParser = ConditionParser()
-    private val constantsParser = ConstantsParser()
     private val RETURNS_EFFECT = FqName("kotlin.internal.Returns")
 
     override fun tryParseFunctor(resolvedCall: ResolvedCall<*>): ESFunctor? {
-        val condition = conditionParser.parseCondition(resolvedCall) ?: return null
+        val condition = UtilityParsers.conditionParser.parseCondition(resolvedCall) ?: return null
 
         val returnsAnnotation = resolvedCall.resultingDescriptor.annotations.findAnnotation(RETURNS_EFFECT) ?: return null
-        val returnsArg = constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: return null
+        val returnsArg = UtilityParsers.constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: return null
 
         return EffectSchemasFactory.singleClause(condition, ESReturns(returnsArg), getParameters(resolvedCall))
     }
