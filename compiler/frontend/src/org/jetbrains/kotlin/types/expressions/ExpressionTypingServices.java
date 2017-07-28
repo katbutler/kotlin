@@ -250,8 +250,7 @@ public class ExpressionTypingServices {
         // Use temporary trace to keep effect system cache only for one statement
         TemporaryBindingTrace traceForStatement = TemporaryBindingTrace.create(
                 context.trace,
-                "trace for resolving single statement",
-                (TraceEntryFilter) (slice, key) -> slice != BindingContext.EXPRESSION_EFFECTS
+                "trace for resolving single statement"
         );
         ExpressionTypingContext newContext = context.replaceScope(scope).replaceExpectedType(NO_EXPECTED_TYPE).replaceBindingTrace(traceForStatement);
 
@@ -295,7 +294,8 @@ public class ExpressionTypingServices {
             }
             blockLevelVisitor = new ExpressionTypingVisitorDispatcher.ForBlock(expressionTypingComponents, annotationChecker, scope);
 
-            traceForStatement.commit();
+            // XXX: filterting LEXICAL_SCOPE looks very hacky, but without it KT-8596 fails
+            traceForStatement.commit( (slice, key) -> slice != BindingContext.EXPRESSION_EFFECTS && slice != BindingContext.LEXICAL_SCOPE, true);
         }
         return result.replaceJumpOutPossible(jumpOutPossible).replaceJumpFlowInfo(beforeJumpInfo);
     }
