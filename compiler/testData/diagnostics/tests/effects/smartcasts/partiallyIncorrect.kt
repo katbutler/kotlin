@@ -1,7 +1,9 @@
 // !DIAGNOSTICS: -INVISIBLE_MEMBER -INVISIBLE_REFERENCE
 
-@kotlin.internal.Returns(kotlin.internal.ConstantValue.FALSE)
-fun isString(@kotlin.internal.Not @kotlin.internal.IsInstance(String::class) x: Any?) = x is String
+import kotlin.internal.*
+
+@Returns(ConstantValue.TRUE)
+fun isString(@IsInstance(String::class) x: Any?) = x is String
 
 fun incorrectPartDoesntMatter(x: Any?) {
     if (isString(x) && <!CONSTANT_EXPECTED_TYPE_MISMATCH!>1<!>) {

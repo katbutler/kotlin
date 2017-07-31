@@ -2,28 +2,28 @@
 
 import kotlin.internal.*
 
-@Throws()
-fun myAssert(@Equals(ConstantValue.FALSE) condition: Boolean) {
+@Returns
+fun myAssert(@Equals(ConstantValue.TRUE) condition: Boolean) {
     if (!condition) throw kotlin.IllegalArgumentException("Assertion failed")
 }
 
-@Returns(ConstantValue.FALSE)
-fun isString(@Not @IsInstance(String::class) x: Any?) = x is String
+@Returns(ConstantValue.TRUE)
+fun isString(@IsInstance(String::class) x: Any?) = x is String
 
-@Returns(ConstantValue.FALSE)
-fun isInt(@Not @IsInstance(Int::class) x: Any?) = x is Int
+@Returns(ConstantValue.TRUE)
+fun isInt(@IsInstance(Int::class) x: Any?) = x is Int
 
-@Returns(ConstantValue.FALSE)
-fun notEqualsNull(@Equals(ConstantValue.NULL) x: Any?) = x != null
+@Returns(ConstantValue.TRUE)
+fun notEqualsNull(@Equals(ConstantValue.NOT_NULL) x: Any?) = x != null
 
-@Returns(ConstantValue.FALSE)
-fun equalsTrue(@Not @Equals(ConstantValue.TRUE) x: Boolean) = x == true
+@Returns(ConstantValue.TRUE)
+fun equalsTrue(@Equals(ConstantValue.TRUE) x: Boolean) = x == true
 
-@Returns(ConstantValue.FALSE)
-fun equalsFalse(@Not @Equals(ConstantValue.FALSE) x: Boolean) = x == false
+@Returns(ConstantValue.TRUE)
+fun equalsFalse(@Equals(ConstantValue.FALSE) x: Boolean) = x == false
 
-@Returns(ConstantValue.NULL)
-fun nullWhenNotString(@Not @IsInstance(String::class) x: Any?) = x as? String
+@Returns(ConstantValue.NOT_NULL)
+fun nullWhenNotString(@IsInstance(String::class) x: Any?) = x as? String
 
 fun nested1(x: Any?) {
     if (equalsTrue(isString(x))) {

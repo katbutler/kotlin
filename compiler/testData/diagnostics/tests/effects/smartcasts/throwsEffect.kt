@@ -2,8 +2,8 @@
 
 import kotlin.internal.*
 
-@Throws()
-fun myAssert(@Equals(ConstantValue.FALSE) condition: Boolean) {
+@Returns
+fun myAssert(@Equals(ConstantValue.TRUE) condition: Boolean) {
     if (!condition) throw kotlin.IllegalArgumentException("Assertion failed")
 }
 

@@ -2,12 +2,8 @@
 
 import kotlin.internal.*
 
-
-// x is String -> Returns(NULL) <- useless in annotation
-// <=> (in this particular case)
-// x !is String -> Returns(NOT_NULL)
-@Returns(ConstantValue.NOT_NULL)
-fun nullWhenString(@Not @IsInstance(String::class) x: Any?) = if (x is String) null else 42
+@Returns(ConstantValue.NULL)
+fun nullWhenString(@IsInstance(String::class) x: Any?) = if (x is String) null else 42
 
 fun testNullWhenString(x: Any?) {
     if (nullWhenString(x) == null) {
@@ -26,11 +22,8 @@ fun testNullWhenStringInversed(x: Any?) {
     }
 }
 
-// x !is String -> Returns(NULL)
-// <=> (in this particular case)
-// x is String -> Returns(NOT_NULL) <- useless in annotation
-@Returns(ConstantValue.NULL)
-fun nullWhenNotString(@Not @IsInstance(String::class) x: Any?) = if (x !is String) null else 42
+@Returns(ConstantValue.NOT_NULL)
+fun nullWhenNotString(@IsInstance(String::class) x: Any?) = if (x !is String) null else 42
 
 fun testNullNotWhenString(x: Any?) {
     if (nullWhenNotString(x) == null) {

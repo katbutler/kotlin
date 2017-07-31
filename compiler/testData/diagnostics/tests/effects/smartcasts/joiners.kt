@@ -3,30 +3,57 @@
 import kotlin.internal.*
 
 @Returns(ConstantValue.TRUE)
-@JoinConditions(JoiningStrategy.ANY)
-fun anyIsNotString(@Not @IsInstance(String::class) x: Any?,
-                   @Not @IsInstance(String::class) y: Any?,
-                   @Not @IsInstance(String::class)z: Any?)
-        = x !is String || y !is String || z !is String
+@JoinConditions(JoiningStrategy.ALL)
+fun allIsString(
+        @IsInstance(String::class) x: Any?,
+        @IsInstance(String::class) y: Any?,
+        @IsInstance(String::class) z: Any?
+) = x is String && y is String && z is String
 
-fun testAnyJoiner(x: Any?, y: Any?, z: Any?) {
-    if (anyIsNotString(x, y, z)) {
-        x.<!UNRESOLVED_REFERENCE!>length<!>
-        x.<!UNRESOLVED_REFERENCE!>length<!>
-    } else {
+fun testAllJoiner(x: Any?, y: Any?, z: Any?) {
+    if (allIsString(x, y, z)) {
         <!DEBUG_INFO_SMARTCAST!>x<!>.length
         <!DEBUG_INFO_SMARTCAST!>y<!>.length
+        <!DEBUG_INFO_SMARTCAST!>z<!>.length
+    }
+    else {
+        x.<!UNRESOLVED_REFERENCE!>length<!>
+        y.<!UNRESOLVED_REFERENCE!>length<!>
+        z.<!UNRESOLVED_REFERENCE!>length<!>
     }
 }
 
 @Returns(ConstantValue.TRUE)
-@JoinConditions(JoiningStrategy.NONE)   // pretty pointless, just for testing purposes
-fun notIsString(@IsInstance(String::class) x: Any?) = x !is String
+@JoinConditions(JoiningStrategy.NONE)
+fun noneIsNotString(
+        @Not @IsInstance(String::class) x: Any?,
+        @Not @IsInstance(String::class) y: Any?,
+        @Not @IsInstance(String::class) z: Any?
+) = (!(x !is String)) && (!(y !is String)) && (!(z !is String))
+
+fun testNoneJoiner(x: Any?, y: Any?, z: Any?) {
+    if (noneIsNotString(x, y, z)) {
+        <!DEBUG_INFO_SMARTCAST!>x<!>.length
+        <!DEBUG_INFO_SMARTCAST!>y<!>.length
+        <!DEBUG_INFO_SMARTCAST!>z<!>.length
+    }
+    else {
+        x.<!UNRESOLVED_REFERENCE!>length<!>
+        y.<!UNRESOLVED_REFERENCE!>length<!>
+        z.<!UNRESOLVED_REFERENCE!>length<!>
+    }
+}
+
+
+@Returns(ConstantValue.TRUE)
+@JoinConditions(JoiningStrategy.ANY) // pretty pointless, just for testing purposes
+fun anyIsString(@IsInstance(String::class) x: Any?) = x !is String
 
 fun testNoneJoiner(x: Any?) {
-    if (notIsString(x)) {
-        x.<!UNRESOLVED_REFERENCE!>length<!>
-    } else {
+    if (anyIsString(x)) {
         <!DEBUG_INFO_SMARTCAST!>x<!>.length
+    }
+    else {
+        x.<!UNRESOLVED_REFERENCE!>length<!>
     }
 }

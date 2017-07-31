@@ -62,8 +62,8 @@ fun test() {
   }
 
   if (1 == 2 || out != null && <!DEBUG_INFO_SMARTCAST!>out<!>.println(1) == Unit) {
-    out<!UNNECESSARY_SAFE_CALL!>?.<!>println(2);
-    <!DEBUG_INFO_SMARTCAST!>out<!>.println(2);
+    out?.println(2);
+    out<!UNSAFE_CALL!>.<!>println(2);
   }
   else {
     out?.println(3)
@@ -123,8 +123,8 @@ fun test() {
   }
 
   if (1 == 2 || out != null && <!DEBUG_INFO_SMARTCAST!>out<!>.println(1) == Unit) {
-    out<!UNNECESSARY_SAFE_CALL!>?.<!>println(2);
-    <!DEBUG_INFO_SMARTCAST!>out<!>.println(2);
+    out?.println(2);
+    out<!UNSAFE_CALL!>.<!>println(2);
   }
   else {
     out?.println(3)

@@ -2,8 +2,8 @@
 
 import kotlin.internal.*
 
-@Returns(ConstantValue.NULL)
-fun nullWhenNull(@Equals(ConstantValue.NULL) x: Int?) = x?.inc()
+@Returns(ConstantValue.NOT_NULL)
+fun nullWhenNull(@Equals(ConstantValue.NOT_NULL) x: Int?) = x?.inc()
 
 fun testNullWhenNull(x: Int?) {
     if (nullWhenNull(x) == null) {
@@ -22,26 +22,20 @@ fun testNullWhenNull(x: Int?) {
 }
 
 // NB. it is the same function as `nullWhenNull`, but annotations specifies other facet of the function behaviour
-@Returns(ConstantValue.NOT_NULL)
-fun notNullWhenNotNull (@Equals(ConstantValue.NOT_NULL) x: Int?) = x?.inc()
+@Returns(ConstantValue.NULL)
+fun notNullWhenNotNull (@Equals(ConstantValue.NULL) x: Int?) = x?.inc()
 
 fun testNotNullWhenNotNull (x: Int?) {
     if (notNullWhenNotNull(x) == null) {
-        x == null
+        <!SENSELESS_COMPARISON!><!DEBUG_INFO_CONSTANT!>x<!> == null<!>
     } else {
-        // Note that we don't get a smartcast here because we get schema:
-        // x != null -> Returns(false)
-        // so we can't reason that x is definitely not null here
         x<!UNSAFE_CALL!>.<!>dec()
     }
 
     if (notNullWhenNotNull(x) != null) {
-        // Note that we don't get a smartcast here because we get schema:
-        // x != null -> Returns(true)
-        // so we can't reason that x is definitely not null here
         x<!UNSAFE_CALL!>.<!>dec()
     } else {
-        x == null
+        <!SENSELESS_COMPARISON!><!DEBUG_INFO_CONSTANT!>x<!> == null<!>
     }
 
     x<!UNSAFE_CALL!>.<!>dec()

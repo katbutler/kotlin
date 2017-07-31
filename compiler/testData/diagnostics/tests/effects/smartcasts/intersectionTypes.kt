@@ -2,11 +2,11 @@
 
 import kotlin.internal.*
 
-@Returns(ConstantValue.TRUE)
-fun notIsString(@Not @IsInstance(String::class) x: Any?) = x !is String
+@Returns(ConstantValue.FALSE)
+fun notIsString(@IsInstance(String::class) x: Any?) = x !is String
 
-@Returns(ConstantValue.TRUE)
-fun notIsInt(@Not @IsInstance(Int::class) x: Any?) = x !is Int
+@Returns(ConstantValue.FALSE)
+fun notIsInt(@IsInstance(Int::class) x: Any?) = x !is Int
 
 fun testDeMorgan(x: Any?) {
        // !(x !is String || x !is Int)

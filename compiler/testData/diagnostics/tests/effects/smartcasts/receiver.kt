@@ -2,8 +2,8 @@
 
 import kotlin.internal.*
 
-@Returns(ConstantValue.TRUE)
-fun @receiver:Equals(ConstantValue.NULL) Any?.isNull() = this == null
+@Returns(ConstantValue.FALSE)
+fun @receiver:Equals(ConstantValue.NOT_NULL) Any?.isNull() = this == null
 
 fun testSmartcastOnReceiver(x: Int?) {
     if (x.isNull()) {
