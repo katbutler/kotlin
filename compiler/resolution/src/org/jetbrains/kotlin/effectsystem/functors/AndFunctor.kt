@@ -26,27 +26,36 @@ import org.jetbrains.kotlin.effectsystem.structure.ESClause
 class AndFunctor : AbstractSequentialBinaryFunctor() {
     override fun combineClauses(left: List<ESClause>, right: List<ESClause>): List<ESClause> {
         /* Normally, `left` and `right` contain clauses that end with Returns(false/true), but if
-         expression wasn't properly typechecked, we could get some senseless clauses here, like
-         ending with Returns(1) (note that they still *return* as guaranteed by AbstractSequentialBinaryFunctor) .
+         expression wasn't properly typechecked, we could get some senseless clauses here, e.g.
+         with Returns(1) (note that they still *return* as guaranteed by AbstractSequentialBinaryFunctor).
          We will just ignore such clauses in order to make smartcasting robust while typing */
-        val (leftTrue, leftFalse) = left.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
-        val (rightTrue, rightFalse) = right.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
 
-        val leftTrueFolded = foldConditionsWithOr(leftTrue)
-        val rightTrueFolded = foldConditionsWithOr(rightTrue)
-        val leftFalseFolded = foldConditionsWithOr(leftFalse)
-        val rightFalseFolded = foldConditionsWithOr(rightFalse)
+        val (leftTrue, leftFalse) = left.strictPartition(ESReturns(true.lift()), ESReturns(false.lift()))
+        val (rightTrue, rightFalse) = right.strictPartition(ESReturns(true.lift()), ESReturns(false.lift()))
 
-        val returnsTrue = ClausesFactory.create(
-                premise = leftTrueFolded.and(rightTrueFolded),
-                conclusion = ESReturns(true.lift())
-        )
+        val whenLeftReturnsTrue = foldConditionsWithOr(leftTrue)
+        val whenRightReturnsTrue = foldConditionsWithOr(rightTrue)
+        val whenLeftReturnsFalse = foldConditionsWithOr(leftFalse)
+        val whenRightReturnsFalse = foldConditionsWithOr(rightFalse)
 
-        val returnsFalse = ClausesFactory.create(
-                premise = leftFalseFolded.or(rightFalseFolded),
-                conclusion = ESReturns(false.lift())
-        )
+        // Even if one of 'Returns(true)' is missing, we still can argue that other condition
+        // *must* be true when whole functor returns true
+        val conditionWhenTrue = applyWithDefault(whenLeftReturnsTrue, whenRightReturnsTrue, { l, r -> l.and(r) })
 
-        return listOf(returnsTrue, returnsFalse)
+        // When whole And-functor returns false, we can only argue that one of arguments was false, and to do so we
+        // have to know *both* 'Returns(false)'-conditions
+        val conditionWhenFalse = applyIfBothNotNull(whenLeftReturnsFalse, whenRightReturnsFalse, { l, r -> l.or(r) })
+
+        val result = mutableListOf<ESClause>()
+
+        if (conditionWhenTrue != null) {
+            result.add(ClausesFactory.create(conditionWhenTrue, ESReturns(true.lift())))
+        }
+
+        if (conditionWhenFalse != null) {
+            result.add(ClausesFactory.create(conditionWhenFalse, ESReturns(false.lift())))
+        }
+
+        return result
     }
 }

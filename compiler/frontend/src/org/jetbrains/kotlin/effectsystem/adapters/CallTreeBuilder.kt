@@ -18,10 +18,13 @@ package org.jetbrains.kotlin.effectsystem.adapters
 
 import org.jetbrains.kotlin.builtins.DefaultBuiltIns
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
+import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.functors.*
+import org.jetbrains.kotlin.effectsystem.impls.ESConstant
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
 import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
 import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
+import org.jetbrains.kotlin.effectsystem.structure.UNIT_ID
 import org.jetbrains.kotlin.effectsystem.structure.calltree.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -31,6 +34,7 @@ import org.jetbrains.kotlin.resolve.calls.model.ExpressionValueArgument
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 import org.jetbrains.kotlin.resolve.constants.CompileTimeConstant
+import org.jetbrains.kotlin.resolve.constants.TypedCompileTimeConstant
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.utils.ifEmpty
 
@@ -50,14 +54,18 @@ class CallTreeBuilder(
 
         val type: KotlinType = bindingContext.getType(expression) ?: return UNKNOWN_CALL
 
-        val compileTimeConstant: CompileTimeConstant<*>
-                = bindingContext.get(BindingContext.COMPILE_TIME_VALUE, expression) ?: return UNKNOWN_CALL
+        val compileTimeConstant: TypedCompileTimeConstant<*>
+                = bindingContext.get(BindingContext.COMPILE_TIME_VALUE, expression) as? TypedCompileTimeConstant<*> ?: return UNKNOWN_CALL
         val value: Any? = compileTimeConstant.getValue(type)
-        return CTConstant(ValueIdsFactory.idForConstant(value), type, value)
+        return CTConstant(ValueIdsFactory.idForConstant(value), compileTimeConstant.type, value)
     }
 
-    override fun visitSimpleNameExpression(expression: KtSimpleNameExpression, data: Unit): CTNode =
-            tryCreateVariable(expression)
+
+
+    override fun visitSimpleNameExpression(expression: KtSimpleNameExpression, data: Unit): CTNode {
+        if (expression.text == "Unit") return CTConstant(UNIT_ID, DefaultBuiltIns.Instance.unitType, Unit)
+        return tryCreateVariable(expression)
+    }
 
     override fun visitParenthesizedExpression(expression: KtParenthesizedExpression, data: Unit): CTNode =
             expression.expression?.accept(this, data) ?: UNKNOWN_CALL
@@ -100,9 +108,16 @@ class CallTreeBuilder(
 
         val leftNode = expression.left?.accept(this, data) ?: return UNKNOWN_CALL
         val rightNode = expression.right?.accept(this, data) ?: return UNKNOWN_CALL
+
         val functor = when (expression.operationToken) {
-            KtTokens.EQEQ, KtTokens.EQEQEQ -> EqualFunctor(false)
-            KtTokens.EXCLEQ, KtTokens.EXCLEQEQEQ -> EqualFunctor(true)
+            KtTokens.EQEQ, KtTokens.EQEQEQ -> {
+                rightNode as? CTConstant ?: return UNKNOWN_CALL
+                return CTCall(EqualsToBinaryConstantFunctor(false, ValuesFactory.createConstant(rightNode.id, rightNode.value, rightNode.type)), listOf(leftNode))
+            }
+            KtTokens.EXCLEQ, KtTokens.EXCLEQEQEQ -> {
+                rightNode as? CTConstant ?: return UNKNOWN_CALL
+                return CTCall(EqualsToBinaryConstantFunctor(true, ValuesFactory.createConstant(rightNode.id, rightNode.value, rightNode.type)), listOf(leftNode))
+            }
             KtTokens.ANDAND -> AndFunctor()
             KtTokens.OROR -> OrFunctor()
             else -> return UNKNOWN_CALL

@@ -28,7 +28,7 @@ import java.util.*
 interface ESValueID
 
 class ConstantID(val value: Any?) : ESValueID {
-    override fun equals(other: Any?): Boolean = other is ConstantID && other.value == value
+    override fun equals(other: Any?): Boolean = other is ConstantID && (other == UNKNOWN_ID || other.value == value)
     override fun hashCode(): Int = Objects.hashCode(value) * 31
     override fun toString(): String = value.toString()
 }
@@ -38,4 +38,12 @@ class ConstantID(val value: Any?) : ESValueID {
  */
 object NOT_NULL_ID : ESValueID {
     override fun toString(): String = "<non-null value>"
+}
+
+object UNKNOWN_ID : ESValueID {
+    override fun toString(): String = "<unknown value>"
+}
+
+object UNIT_ID : ESValueID {
+    override fun toString(): String = "Unit"
 }

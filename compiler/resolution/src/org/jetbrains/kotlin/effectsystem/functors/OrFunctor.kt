@@ -29,25 +29,32 @@ class OrFunctor : AbstractSequentialBinaryFunctor() {
          expression wasn't properly typechecked, we could get some senseless clauses here, e.g.
          with Returns(1) (note that they still *return* as guaranteed by AbstractSequentialBinaryFunctor).
          We will just ignore such clauses in order to make smartcasting robust while typing */
+        val (leftTrue, leftFalse) = left.strictPartition(ESReturns(true.lift()), ESReturns(false.lift()))
+        val (rightTrue, rightFalse) = right.strictPartition(ESReturns(true.lift()), ESReturns(false.lift()))
 
-        val (leftTrue, leftFalse) = left.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
-        val (rightTrue, rightFalse) = right.partitionByOutcome(ESReturns(true.lift()), ESReturns(false.lift()))
+        val whenLeftReturnsTrue = foldConditionsWithOr(leftTrue)
+        val whenRightReturnsTrue = foldConditionsWithOr(rightTrue)
+        val whenLeftReturnsFalse = foldConditionsWithOr(leftFalse)
+        val whenRightReturnsFalse = foldConditionsWithOr(rightFalse)
 
-        val leftTrueFolded = foldConditionsWithOr(leftTrue)
-        val rightTrueFolded = foldConditionsWithOr(rightTrue)
-        val leftFalseFolded = foldConditionsWithOr(leftFalse)
-        val rightFalseFolded = foldConditionsWithOr(rightFalse)
+        // When whole Or-functor returns true, all we know is that one of arguments was true.
+        // So, to make a correct clause we have to know *both* 'Returns(true)'-conditions
+        val conditionWhenTrue = applyIfBothNotNull(whenLeftReturnsTrue, whenRightReturnsTrue, { l, r -> l.or(r) })
 
-        val returnsTrue = ClausesFactory.create(
-                premise = leftTrueFolded.or(rightTrueFolded),
-                conclusion = ESReturns(true.lift())
-        )
+        // Even if one of 'Returns(false)' is missing, we still can argue that other condition
+        // *must* be false when whole OR-functor returns false
+        val conditionWhenFalse = applyWithDefault(whenLeftReturnsFalse, whenRightReturnsFalse, { l, r -> l.and(r) })
 
-        val returnsFalse = ClausesFactory.create(
-                premise = leftFalseFolded.and(rightFalseFolded),
-                conclusion = ESReturns(false.lift())
-        )
+        val result = mutableListOf<ESClause>()
 
-        return listOf(returnsTrue, returnsFalse)
+        if (conditionWhenTrue != null) {
+            result.add(ClausesFactory.create(conditionWhenTrue, ESReturns(true.lift())))
+        }
+
+        if (conditionWhenFalse != null) {
+            result.add(ClausesFactory.create(conditionWhenFalse, ESReturns(false.lift())))
+        }
+
+        return result
     }
 }

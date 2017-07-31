@@ -18,33 +18,45 @@ package org.jetbrains.kotlin.effectsystem.functors
 
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.ClausesFactory
-import org.jetbrains.kotlin.effectsystem.impls.ESEqual
-import org.jetbrains.kotlin.effectsystem.impls.and
+import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.factories.lift
+import org.jetbrains.kotlin.effectsystem.impls.ESConstant
+import org.jetbrains.kotlin.effectsystem.impls.ESEqual
+import org.jetbrains.kotlin.effectsystem.impls.ESVariable
 import org.jetbrains.kotlin.effectsystem.structure.ESClause
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
-class EqualFunctor(val isNegated: Boolean) : AbstractSequentialBinaryFunctor() {
-    override fun combineClauses(left: List<ESClause>, right: List<ESClause>): List<ESClause> {
-        return left.flatMap { leftClause ->
-             right.flatMap inner@ { rightClause ->
-                val combinedPremise = leftClause.condition.and(rightClause.condition)
-
-                val leftValue = (leftClause.effect as ESReturns).value
-                val rightValue = (rightClause.effect as ESReturns).value
-
-                val trueResult = ClausesFactory.create(
-                        premise = combinedPremise.and(ESEqual(leftValue, rightValue, this)),
-                        conclusion = ESReturns(true.lift())
-                )
-                val falseResult = ClausesFactory.create(
-                        premise = combinedPremise.and(ESEqual(leftValue, rightValue, negated())),
-                        conclusion = ESReturns(false.lift())
-                )
-
-                return@inner listOf(trueResult, falseResult)
-            }
+class EqualsToBinaryConstantFunctor(val isNegated: Boolean, val constant: ESConstant) : AbstractSequentialUnaryFunctor() {
+    override fun combineClauses(list: List<ESClause>): List<ESClause> {
+        // Corner-case when left is variable
+        if (list.size == 1 && list.single().effect.safeAs<ESReturns>()?.value is ESVariable) {
+            val variable = (list.single().effect as ESReturns).value as ESVariable
+            return listOf(ClausesFactory.create(ESEqual(variable, constant, isNegated), ESReturns(true.lift())))
         }
+
+        /**
+         * Here we implicitly use the fact that constant is binary (i.e. has exactly two values),
+         * so all 'notEqual'-clauses (if any) are the only clauses that can produce false
+         */
+        val (equal, notEqual) = list.partition { it.effect == ESReturns(constant) || (it.effect as ESReturns).value == ValuesFactory.UNKNOWN_CONSTANT }
+
+        val whenArgReturnsSameConstant = foldConditionsWithOr(equal)
+        val whenArgReturnsOtherConstant = foldConditionsWithOr(notEqual)
+
+        val result = mutableListOf<ESClause>()
+
+        if (whenArgReturnsSameConstant != null) {
+            val returnValue = isNegated.not().lift() // true when not negated, false otherwise
+            result.add(ClausesFactory.create(whenArgReturnsSameConstant, ESReturns(returnValue)))
+        }
+
+        if (whenArgReturnsOtherConstant != null) {
+            val returnValue = isNegated.lift()       // false when not negated, true otherwise
+            result.add(ClausesFactory.create(whenArgReturnsOtherConstant, ESReturns(returnValue)))
+        }
+
+        return result
     }
 
-    fun negated(): EqualFunctor = EqualFunctor(isNegated.not())
+    fun negated(): EqualsToBinaryConstantFunctor = EqualsToBinaryConstantFunctor(isNegated.not(), constant)
 }

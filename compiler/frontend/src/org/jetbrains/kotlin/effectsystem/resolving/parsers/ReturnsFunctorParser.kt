@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.effectsystem.adapters.ValueIdsFactory
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
+import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESVariable
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorParser
 import org.jetbrains.kotlin.effectsystem.resolving.utility.ConditionParser
@@ -39,7 +40,7 @@ class ReturnsFunctorParser : FunctorParser {
         val condition = UtilityParsers.conditionParser.parseCondition(resolvedCall) ?: return null
 
         val returnsAnnotation = resolvedCall.resultingDescriptor.annotations.findAnnotation(RETURNS_EFFECT) ?: return null
-        val returnsArg = UtilityParsers.constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: return null
+        val returnsArg = UtilityParsers.constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: ValuesFactory.UNKNOWN_CONSTANT
 
         return EffectSchemasFactory.singleClause(condition, ESReturns(returnsArg), getParameters(resolvedCall))
     }

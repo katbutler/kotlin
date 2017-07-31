@@ -17,18 +17,41 @@
 package org.jetbrains.kotlin.effectsystem.factories
 
 import org.jetbrains.kotlin.builtins.DefaultBuiltIns
-import org.jetbrains.kotlin.effectsystem.structure.ConstantID
 import org.jetbrains.kotlin.effectsystem.impls.ESBooleanConstant
 import org.jetbrains.kotlin.effectsystem.impls.ESConstant
-import org.jetbrains.kotlin.effectsystem.structure.NOT_NULL_ID
+import org.jetbrains.kotlin.effectsystem.structure.*
+import org.jetbrains.kotlin.types.KotlinType
 
 fun Boolean.lift(): ESBooleanConstant = ESBooleanConstant(ConstantID(this), this)
+
+fun ESBooleanConstant.negate(): ESBooleanConstant = ESBooleanConstant(ConstantID(this.value.not()), this.value.not())
 
 fun Nothing?.lift(): ESConstant = ESConstant(ConstantID(this), this, DefaultBuiltIns.Instance.nullableNothingType)
 
 object ValuesFactory {
+    fun createConstant(id: ESValueID, value: Any?, type: KotlinType): ESConstant {
+        return if (type == DefaultBuiltIns.Instance.booleanType) {
+            ESBooleanConstant(id, value as Boolean)
+        } else {
+            ESConstant(id, value, type)
+        }
+    }
+
     val NOT_NULL_CONSTANT = ESConstant(
             id = NOT_NULL_ID,
-            value = object {}, // anonymous singleton to be sure that this value will be
+            value = object {},
             type = DefaultBuiltIns.Instance.anyType)
+
+
+    val UNKNOWN_CONSTANT = ESConstant(
+            id = UNKNOWN_ID,
+            value = object {},
+            type = DefaultBuiltIns.Instance.nullableAnyType
+    )
+
+    val UNIT_CONSTANT = ESConstant(
+            id = UNIT_ID,
+            value = Unit,
+            type = DefaultBuiltIns.Instance.unitType
+    )
 }

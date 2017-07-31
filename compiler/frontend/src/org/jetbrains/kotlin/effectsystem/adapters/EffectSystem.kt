@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.effectsystem.structure.ESEffect
 import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.effects.ESThrows
+import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorResolver
 import org.jetbrains.kotlin.effectsystem.visitors.Reducer
@@ -44,8 +45,8 @@ class EffectSystem {
     ): DataFlowInfo {
         val callExpression = resolvedCall.call.callElement as? KtExpression ?: return DataFlowInfo.EMPTY
         if (callExpression is KtDeclaration) return DataFlowInfo.EMPTY
-        return getDFIWhenNot(ESThrows(null), callExpression,
-                             bindingTrace, languageVersionSettings, moduleDescriptor)
+        return getDFIWhen(ESReturns(ValuesFactory.UNKNOWN_CONSTANT), callExpression,
+                          bindingTrace, languageVersionSettings, moduleDescriptor)
     }
 
     fun getConditionalInfoForThenBranch(
@@ -54,12 +55,8 @@ class EffectSystem {
             languageVersionSettings: LanguageVersionSettings,
             moduleDescriptor: ModuleDescriptor
     ): DataFlowInfo {
-        /**
-         * Note that here we could be more specific and say that
-         * we haven't observed neither Returns(false) *nor* Throws(???)
-         */
         if (condition == null) return DataFlowInfo.EMPTY
-        return getDFIWhenNot(ESReturns(false.lift()), condition, bindingTrace, languageVersionSettings, moduleDescriptor)
+        return getDFIWhen(ESReturns(true.lift()), condition, bindingTrace, languageVersionSettings, moduleDescriptor)
     }
 
     fun getConditionalInfoForElseBranch(
@@ -68,16 +65,12 @@ class EffectSystem {
             languageVersionSettings: LanguageVersionSettings,
             moduleDescriptor: ModuleDescriptor
     ): DataFlowInfo {
-        /**
-         * Note that here we could be more specific and say that
-         * we haven't observed neither Returns(false) *nor* Throws(???)
-         */
         if (condition == null) return DataFlowInfo.EMPTY
-        return getDFIWhenNot(ESReturns(true.lift()), condition, bindingTrace, languageVersionSettings, moduleDescriptor)
+        return getDFIWhen(ESReturns(false.lift()), condition, bindingTrace, languageVersionSettings, moduleDescriptor)
     }
 
-    private fun getDFIWhenNot(
-            notObservedEffect: ESEffect,
+    private fun getDFIWhen(
+            observedEffect: ESEffect,
             expression: KtExpression,
             bindingTrace: BindingTrace,
             languageVersionSettings: LanguageVersionSettings,
@@ -85,7 +78,7 @@ class EffectSystem {
     ): DataFlowInfo {
         val schema = getSchema(expression, bindingTrace, moduleDescriptor) ?: return DataFlowInfo.EMPTY
 
-        val extractedContextInfo = InfoCollector(notObservedEffect).collectFromSchema(schema)
+        val extractedContextInfo = InfoCollector(observedEffect).collectFromSchema(schema)
 
         return extractedContextInfo.toDataFlowInfo(languageVersionSettings)
     }

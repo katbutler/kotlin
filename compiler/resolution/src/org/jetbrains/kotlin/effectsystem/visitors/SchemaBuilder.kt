@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.effectsystem.structure.calltree.CTConstant
 import org.jetbrains.kotlin.effectsystem.structure.calltree.CTLambda
 import org.jetbrains.kotlin.effectsystem.structure.calltree.CTVariable
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
+import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.structure.calltree.CallTreeVisitor
 
 /**
@@ -35,14 +36,8 @@ class SchemaBuilder : CallTreeVisitor<EffectSchema?> {
         return ctCall.functor.apply(builtArgs)
     }
 
-    override fun visitConstant(ctConstant: CTConstant) =
-            EffectSchemasFactory.pureReturns(
-                    if (ctConstant.type == DefaultBuiltIns.Instance.booleanType) {
-                        ESBooleanConstant(ctConstant.id, ctConstant.value as Boolean)
-                    } else {
-                        ESConstant(ctConstant.id, ctConstant.value, ctConstant.type)
-                    }
-            )
+    override fun visitConstant(ctConstant: CTConstant): EffectSchema =
+            EffectSchemasFactory.schemaForConstant(ValuesFactory.createConstant(ctConstant.id, ctConstant.value, ctConstant.type))
 
     override fun visitVariable(ctVariable: CTVariable) =
             EffectSchemasFactory.pureReturns(

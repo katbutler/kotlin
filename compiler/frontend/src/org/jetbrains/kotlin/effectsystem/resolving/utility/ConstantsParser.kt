@@ -29,6 +29,7 @@ class ConstantsParser {
         "FALSE" -> false.lift()
         "NULL" -> null.lift()
         "NOT_NULL" -> ValuesFactory.NOT_NULL_CONSTANT
+        "UNKNOWN" -> ValuesFactory.UNKNOWN_CONSTANT
         null -> null
         else -> throw IllegalStateException("Unknown annotation-constant: $this")
     }

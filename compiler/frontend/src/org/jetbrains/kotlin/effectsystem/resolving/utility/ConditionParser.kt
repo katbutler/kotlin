@@ -19,7 +19,6 @@ package org.jetbrains.kotlin.effectsystem.resolving.utility
 import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.effectsystem.adapters.ValueIdsFactory
-import org.jetbrains.kotlin.effectsystem.functors.EqualFunctor
 import org.jetbrains.kotlin.effectsystem.functors.IsFunctor
 import org.jetbrains.kotlin.effectsystem.impls.*
 import org.jetbrains.kotlin.effectsystem.structure.ESBooleanExpression
@@ -64,7 +63,7 @@ class ConditionParser {
 
         return receiverParameter.type.annotations.getAllAnnotations().mapNotNull {
             when (it.annotation.annotationClass?.fqNameSafe) {
-                EQUALS_CONDITION -> ESEqual(variable, it.annotation.allValueArguments.values.single().toESConstant() ?: return@mapNotNull null, EqualFunctor(isNegated))
+                EQUALS_CONDITION -> ESEqual(variable, it.annotation.allValueArguments.values.single().toESConstant() ?: return@mapNotNull null, isNegated)
                 IS_INSTANCE_CONDITION -> ESIs(variable, IsFunctor(it.annotation.allValueArguments.values.single().value as KotlinType, isNegated))
                 else -> null
             }
@@ -89,7 +88,7 @@ class ConditionParser {
 
         return parameterDescriptor.annotations.mapNotNull {
             when (it.annotationClass?.fqNameSafe) {
-                EQUALS_CONDITION -> ESEqual(parameterVariable, it.allValueArguments.values.single().toESConstant() ?: return@mapNotNull null, EqualFunctor(isNegated))
+                EQUALS_CONDITION -> ESEqual(parameterVariable, it.allValueArguments.values.single().toESConstant() ?: return@mapNotNull null, isNegated)
                 IS_INSTANCE_CONDITION -> ESIs(parameterVariable, IsFunctor(it.allValueArguments.values.single().value as KotlinType, isNegated))
                 else -> null
             }

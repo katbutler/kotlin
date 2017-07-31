@@ -23,10 +23,7 @@ import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.ESExpressionVisitor
 
-class InfoCollector(private val notObservedEffect: ESEffect) : ESExpressionVisitor<MutableContextInfo> {
-    /**
-     * All methods return info on which passed expression evaluates to !isInverted
-     */
+class InfoCollector(private val observedEffect: ESEffect) : ESExpressionVisitor<MutableContextInfo> {
     private var isInverted: Boolean = false
 
     fun collectFromSchema(schema: EffectSchema): MutableContextInfo =
@@ -34,18 +31,18 @@ class InfoCollector(private val notObservedEffect: ESEffect) : ESExpressionVisit
 
     private fun collectFromClause(clause: ESClause): MutableContextInfo? {
         val premise = clause.condition
-        if (premise is ESBooleanConstant) {
-            return if (premise.value)
-                MutableContextInfo.EMPTY.fire(clause.effect)
-            else
-                MutableContextInfo.EMPTY.deny(clause.effect)
+
+        // Check for non-conditional effects
+        if (premise is ESBooleanConstant && premise.value) {
+            return MutableContextInfo.EMPTY.fire(clause.effect)
         }
 
-        // Otherwise, check if we can claim that condition couldn't be true
-        return when (clause.isImplies(notObservedEffect)) {
-            // Clause implies effect, but it wasn't observed => this clause's condition couldn't be true
-            true -> inverted { clause.condition.accept(this) }
-            // This clause *may* or *doesn't* implies effect, thus it doesn't bring any useful information
+        // Check for information from conditional effects
+        return when (observedEffect.isImplies(clause.effect)) {
+            // observed effect implies clause's effect => clause's effect was fired => clause's condition is true
+            true -> clause.condition.accept(this)
+
+            // Observed effect *may* or *doesn't* implies clause's - no useful information
             null, false -> null
         }
     }
@@ -100,12 +97,6 @@ class InfoCollector(private val notObservedEffect: ESEffect) : ESExpressionVisit
         val result = block()
         isInverted = isInverted.not()
         return result
-    }
-
-    private fun ESClause.isImplies(effect: ESEffect): Boolean? = this.effect.isImplies(effect)
-
-    companion object {
-        fun EffectSchema.collectContextInfo(notObservedEffect: ESEffect): MutableContextInfo = InfoCollector(notObservedEffect).collectFromSchema(this)
     }
 }
 

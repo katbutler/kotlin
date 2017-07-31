@@ -20,13 +20,36 @@ import org.jetbrains.kotlin.effectsystem.impls.or
 import org.jetbrains.kotlin.effectsystem.factories.lift
 import org.jetbrains.kotlin.effectsystem.structure.*
 
-internal fun foldConditionsWithOr(list: List<ESClause>) =
-        list.fold(false.lift() as ESBooleanExpression) { acc, esClause -> acc.or(esClause.condition) }
+/**
+ * Applies [operation] to [first] and [second] if both not-null, otherwise returns null
+ */
+internal fun <F, S, R> applyIfBothNotNull(first: F?, second: S?, operation: (F, S) -> R): R? {
+    if (first == null || second == null) return null
+    return operation(first, second)
+}
+
+/**
+ * If both [first] and [second] are null, then return null
+ * If only one of [first] and [second] is null, then return other one
+ * Otherwise, return result of [operation]
+ */
+internal fun <F : R, S : R, R> applyWithDefault(first: F?, second: S?, operation: (F, S) -> R): R? {
+    if (first == null && second == null) return null
+    if (first == null) return second
+    if (second == null) return first
+    return operation(first, second)
+}
+
+internal fun foldConditionsWithOr(list: List<ESClause>): ESBooleanExpression? =
+        if (list.isEmpty())
+            null
+        else
+            list.map { it.condition}.reduce { acc, condition -> acc.or(condition) }
 
 /**
  * Places all clauses that equal to `firstModel` into first list, and all clauses that equal to `secondModel` into second list
  */
-internal fun List<ESClause>.partitionByOutcome(firstModel: ESEffect, secondModel: ESEffect): Pair<List<ESClause>, List<ESClause>> {
+internal fun List<ESClause>.strictPartition(firstModel: ESEffect, secondModel: ESEffect): Pair<List<ESClause>, List<ESClause>> {
     val first = mutableListOf<ESClause>()
     val second = mutableListOf<ESClause>()
 

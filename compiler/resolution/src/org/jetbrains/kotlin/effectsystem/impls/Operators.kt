@@ -43,7 +43,9 @@ class ESIs(val left: ESValue, override val functor: IsFunctor): ESBooleanOperato
 
 }
 
-class ESEqual(val left: ESValue, val right: ESValue, override val functor: EqualFunctor): ESBooleanOperator {
+class ESEqual(val left: ESValue, val right: ESConstant, override val functor: EqualsToBinaryConstantFunctor): ESBooleanOperator {
+    constructor(left: ESValue, right: ESConstant, isNegated: Boolean) : this(left, right, EqualsToBinaryConstantFunctor(isNegated, right))
+
     val isNegated = functor.isNegated
 
     override fun <T> accept(visitor: ESExpressionVisitor<T>): T = visitor.visitEqual(this)

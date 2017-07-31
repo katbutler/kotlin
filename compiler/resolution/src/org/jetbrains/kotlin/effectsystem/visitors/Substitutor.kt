@@ -39,8 +39,7 @@ class Substitutor(private val substitutions: Map<ESVariable, EffectSchema>) : ES
 
     override fun visitEqual(equal: ESEqual): EffectSchema? {
         val left = equal.left.accept(this) ?: return null
-        val right = equal.right.accept(this) ?: return null
-        return equal.functor.apply(left, right)
+        return equal.functor.apply(left)
     }
 
     override fun visitAnd(and: ESAnd): EffectSchema? {
