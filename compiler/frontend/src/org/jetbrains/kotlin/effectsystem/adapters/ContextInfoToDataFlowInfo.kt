@@ -21,19 +21,26 @@ import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.effectsystem.structure.ESValue
 import org.jetbrains.kotlin.effectsystem.impls.ESConstant
 import org.jetbrains.kotlin.effectsystem.structure.ConstantID
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfoFactory
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
-import org.jetbrains.kotlin.resolve.calls.smartcasts.IdentifierInfo
+import org.jetbrains.kotlin.effectsystem.structure.NOT_NULL_ID
+import org.jetbrains.kotlin.resolve.calls.smartcasts.*
 
 fun MutableContextInfo.toDataFlowInfo(languageVersionSettings: LanguageVersionSettings): DataFlowInfo {
     var resultDFI = DataFlowInfoFactory.EMPTY
 
     extractDataFlowStatements(equalValues) { leftDfv, rightValue ->
         val id = rightValue.id
-        val rightDfv = when(id) {
+        if (id == NOT_NULL_ID) {
+            resultDFI = resultDFI.disequate(leftDfv, DataFlowValue.nullValue(DefaultBuiltIns.Instance), languageVersionSettings)
+            return@extractDataFlowStatements
+        }
+
+        val rightDfv = when (id) {
             is DataFlowValueID -> id.dfv
-            is ConstantID -> DataFlowValue(IdentifierInfo.NO, (rightValue as ESConstant).type)
+            is ConstantID ->
+                if ((rightValue as ESConstant).value == null)
+                    DataFlowValue.nullValue(DefaultBuiltIns.Instance)
+                else
+                    DataFlowValue(IdentifierInfo.NO, rightValue.type)
             else -> return@extractDataFlowStatements
         }
         resultDFI = resultDFI.equate(leftDfv, rightDfv, false, languageVersionSettings)
@@ -41,13 +48,18 @@ fun MutableContextInfo.toDataFlowInfo(languageVersionSettings: LanguageVersionSe
 
     extractDataFlowStatements(notEqualValues) { leftDfv, rightValue ->
         val id = rightValue.id
-        val rightDfv = when(id) {
+        if (id == NOT_NULL_ID) {
+            resultDFI = resultDFI.equate(leftDfv, DataFlowValue.nullValue(DefaultBuiltIns.Instance), false, languageVersionSettings)
+            return@extractDataFlowStatements
+        }
+
+        val rightDfv = when (id) {
             is DataFlowValueID -> id.dfv
             is ConstantID ->
                 if ((rightValue as ESConstant).value == null)
                     DataFlowValue.nullValue(DefaultBuiltIns.Instance)
                 else
-                    DataFlowValue (IdentifierInfo.NO, rightValue.type)
+                    DataFlowValue(IdentifierInfo.NO, rightValue.type)
             else -> return@extractDataFlowStatements
         }
         resultDFI = resultDFI.disequate(leftDfv, rightDfv, languageVersionSettings)

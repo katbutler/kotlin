@@ -1,10 +1,12 @@
 // !DIAGNOSTICS: -INVISIBLE_MEMBER -INVISIBLE_REFERENCE
 
-@kotlin.internal.Returns(kotlin.internal.ConstantValue.TRUE)
-fun myEqualsNull(@kotlin.internal.Equals(kotlin.internal.ConstantValue.NULL) x: Int?) = x == null
+import kotlin.internal.*
 
-@kotlin.internal.Returns(kotlin.internal.ConstantValue.FALSE)
-fun myEqualsNotNull(@kotlin.internal.Equals(kotlin.internal.ConstantValue.NULL) x: Int?) = x != null
+@Returns(ConstantValue.FALSE)
+fun myEqualsNull(@Equals(ConstantValue.NOT_NULL) x: Int?) = x == null
+
+@Returns(ConstantValue.TRUE)
+fun myEqualsNotNull(@Equals(ConstantValue.NOT_NULL) x: Int?) = x != null
 
 fun testBasicEquals(x: Int?) {
     x<!UNSAFE_CALL!>.<!>inc()
@@ -29,3 +31,4 @@ fun testBasicNotEquals(x: Int?) {
 
     x<!UNSAFE_CALL!>.<!>inc()
 }
+

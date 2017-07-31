@@ -1,11 +1,13 @@
 // !DIAGNOSTICS: -INVISIBLE_MEMBER -INVISIBLE_REFERENCE
 package o
 
-@kotlin.internal.Returns(kotlin.internal.ConstantValue.FALSE)
-fun isString(@kotlin.internal.Not @kotlin.internal.IsInstance(String::class) x: Any?) = x is String
+import kotlin.internal.*
 
-@kotlin.internal.Returns(kotlin.internal.ConstantValue.TRUE)
-fun notIsString(@kotlin.internal.Not @kotlin.internal.IsInstance(String::class) x: Any?) = x !is String
+@Returns(ConstantValue.TRUE)
+fun isString(@IsInstance(String::class) x: Any?) = x is String
+
+@Returns(ConstantValue.FALSE)
+fun notIsString(@IsInstance(String::class) x: Any?) = x !is String
 
 fun testSimple(x: Any?) {
     x.<!UNRESOLVED_REFERENCE!>length<!>
