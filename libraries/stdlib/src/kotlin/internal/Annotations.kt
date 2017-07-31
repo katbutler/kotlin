@@ -74,7 +74,7 @@ internal annotation class DynamicExtension
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-internal annotation class Returns(val value: ConstantValue)
+internal annotation class Returns(val value: ConstantValue = ConstantValue.UNKNOWN)
 
 /**
  * Specifies effect: annotated function throws 'exception' when condition is true
@@ -138,7 +138,8 @@ enum class ConstantValue {
     TRUE,
     FALSE,
     NULL,
-    NOT_NULL
+    NOT_NULL,
+    UNKNOWN
 }
 
 enum class InvocationCount {
