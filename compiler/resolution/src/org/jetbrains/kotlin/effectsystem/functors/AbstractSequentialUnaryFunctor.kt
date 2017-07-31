@@ -32,7 +32,7 @@ import org.jetbrains.kotlin.effectsystem.structure.EffectSchema
  */
 abstract class AbstractSequentialUnaryFunctor : ESFunctor {
     override fun apply(arguments: List<EffectSchema>): EffectSchema? {
-        assert(arguments.size == 1, { "Wrong size of arguments list for Binary operator: expected 1, got ${arguments.size}" })
+        assert(arguments.size == 1, { "Wrong size of arguments list for Unary operator: expected 1, got ${arguments.size}" })
         return apply(arguments[0])
     }
 
