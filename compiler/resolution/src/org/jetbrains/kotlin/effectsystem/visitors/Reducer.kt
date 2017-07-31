@@ -59,9 +59,9 @@ class Reducer : ESExpressionVisitor<ESExpression?> {
 
     override fun visitEqual(equal: ESEqual): ESBooleanExpression {
         val reducedLeft = equal.left.accept(this) as ESValue
-        val reducedRight = equal.right.accept(this) as ESValue
+        val reducedRight = equal.right
 
-        if (reducedLeft is ESConstant && reducedRight is ESConstant) return (reducedLeft.value == reducedRight.value).xor(equal.functor.isNegated).lift()
+        if (reducedLeft is ESConstant) return (reducedLeft.value == reducedRight.value).xor(equal.functor.isNegated).lift()
 
         return ESEqual(reducedLeft, reducedRight, equal.functor)
     }
