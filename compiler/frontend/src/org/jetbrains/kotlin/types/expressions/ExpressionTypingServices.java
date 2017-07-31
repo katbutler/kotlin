@@ -247,18 +247,23 @@ public class ExpressionTypingServices {
 
         ExpressionTypingInternals blockLevelVisitor = new ExpressionTypingVisitorDispatcher.ForBlock(
                 expressionTypingComponents, annotationChecker, scope);
-        // Use temporary trace to keep effect system cache only for one statement
-        TemporaryBindingTrace traceForStatement = TemporaryBindingTrace.create(
-                context.trace,
-                "trace for resolving single statement"
-        );
-        ExpressionTypingContext newContext = context.replaceScope(scope).replaceExpectedType(NO_EXPECTED_TYPE).replaceBindingTrace(traceForStatement);
+        ExpressionTypingContext newContext = context.replaceScope(scope).replaceExpectedType(NO_EXPECTED_TYPE);
 
         KotlinTypeInfo result = TypeInfoFactoryKt.noTypeInfo(context);
         // Jump point data flow info
         DataFlowInfo beforeJumpInfo = newContext.dataFlowInfo;
         boolean jumpOutPossible = false;
         for (Iterator<? extends KtElement> iterator = block.iterator(); iterator.hasNext(); ) {
+            // Use filtering trace to keep effect system cache only for one statement
+            TemporaryBindingTrace traceForSingleStatement = TemporaryBindingTrace.create(
+                    context.trace,
+                    "trace for single statement",
+                    BindingTraceFilter.Companion.getACCEPT_ALL(),
+                    true
+            );
+            newContext = newContext.replaceBindingTrace(traceForSingleStatement);
+
+
             KtElement statement = iterator.next();
             if (!(statement instanceof KtExpression)) {
                 continue;
@@ -294,8 +299,8 @@ public class ExpressionTypingServices {
             }
             blockLevelVisitor = new ExpressionTypingVisitorDispatcher.ForBlock(expressionTypingComponents, annotationChecker, scope);
 
-            // XXX: filterting LEXICAL_SCOPE looks very hacky, but without it KT-8596 fails
-            traceForStatement.commit( (slice, key) -> slice != BindingContext.EXPRESSION_EFFECTS && slice != BindingContext.LEXICAL_SCOPE, true);
+            // Don't commit cache of effect system into parent trace
+            traceForSingleStatement.commit( (slice, key) -> slice != BindingContext.EXPRESSION_EFFECTS, true);
         }
         return result.replaceJumpOutPossible(jumpOutPossible).replaceJumpFlowInfo(beforeJumpInfo);
     }
