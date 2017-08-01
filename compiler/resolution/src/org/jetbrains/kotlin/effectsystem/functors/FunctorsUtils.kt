@@ -44,7 +44,7 @@ internal fun foldConditionsWithOr(list: List<ESClause>): ESBooleanExpression? =
         if (list.isEmpty())
             null
         else
-            list.map { it.condition}.reduce { acc, condition -> acc.or(condition) }
+            list.map { it.condition }.reduce { acc, condition -> acc.or(condition) }
 
 /**
  * Places all clauses that equal to `firstModel` into first list, and all clauses that equal to `secondModel` into second list

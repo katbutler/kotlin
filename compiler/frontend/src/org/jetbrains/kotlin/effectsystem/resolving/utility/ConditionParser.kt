@@ -115,14 +115,4 @@ class ConditionParser {
     }
 
     private fun ConstantValue<*>.toESConstant(): ESConstant? = constantsParser.parseConstantValue(this)
-
-    private fun ValueParameterDescriptor.toESVariable(): ESVariable {
-        val dfv = DataFlowValue(IdentifierInfo.Variable(this, DataFlowValue.Kind.STABLE_VALUE, null), type)
-        return ESVariable(ValueIdsFactory.dfvBased(dfv), type)
-    }
-
-    private fun ReceiverParameterDescriptor.extensionReceiverToESVariable(): ESVariable {
-        val dfv = DataFlowValue(IdentifierInfo.Receiver(value), type)
-        return ESVariable(ValueIdsFactory.dfvBased(dfv), type)
-    }
 }

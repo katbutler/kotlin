@@ -16,22 +16,18 @@
 
 package org.jetbrains.kotlin.effectsystem.resolving.parsers
 
-import org.jetbrains.kotlin.descriptors.ReceiverParameterDescriptor
-import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
-import org.jetbrains.kotlin.effectsystem.adapters.ValueIdsFactory
 import org.jetbrains.kotlin.effectsystem.effects.ESReturns
 import org.jetbrains.kotlin.effectsystem.factories.EffectSchemasFactory
 import org.jetbrains.kotlin.effectsystem.factories.ValuesFactory
 import org.jetbrains.kotlin.effectsystem.impls.ESVariable
 import org.jetbrains.kotlin.effectsystem.resolving.FunctorParser
-import org.jetbrains.kotlin.effectsystem.resolving.utility.ConditionParser
-import org.jetbrains.kotlin.effectsystem.resolving.utility.ConstantsParser
 import org.jetbrains.kotlin.effectsystem.resolving.utility.UtilityParsers
+import org.jetbrains.kotlin.effectsystem.resolving.utility.extensionReceiverToESVariable
+import org.jetbrains.kotlin.effectsystem.resolving.utility.toESConstant
+import org.jetbrains.kotlin.effectsystem.resolving.utility.toESVariable
 import org.jetbrains.kotlin.effectsystem.structure.ESFunctor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue
-import org.jetbrains.kotlin.resolve.calls.smartcasts.IdentifierInfo
 
 class ReturnsFunctorParser : FunctorParser {
     private val RETURNS_EFFECT = FqName("kotlin.internal.Returns")
@@ -40,7 +36,7 @@ class ReturnsFunctorParser : FunctorParser {
         val condition = UtilityParsers.conditionParser.parseCondition(resolvedCall) ?: return null
 
         val returnsAnnotation = resolvedCall.resultingDescriptor.annotations.findAnnotation(RETURNS_EFFECT) ?: return null
-        val returnsArg = UtilityParsers.constantsParser.parseConstantValue(returnsAnnotation.allValueArguments.values.singleOrNull()) ?: ValuesFactory.UNKNOWN_CONSTANT
+        val returnsArg = returnsAnnotation.allValueArguments.values.singleOrNull()?.toESConstant() ?: ValuesFactory.UNKNOWN_CONSTANT
 
         return EffectSchemasFactory.singleClause(condition, ESReturns(returnsArg), getParameters(resolvedCall))
     }
@@ -50,15 +46,5 @@ class ReturnsFunctorParser : FunctorParser {
         resolvedCall.resultingDescriptor.valueParameters.mapTo(allParameters) { it.toESVariable() }
         resolvedCall.resultingDescriptor.extensionReceiverParameter?.extensionReceiverToESVariable()?.let { allParameters += it }
         return allParameters
-    }
-
-    private fun ValueParameterDescriptor.toESVariable(): ESVariable {
-        val dfv = DataFlowValue(IdentifierInfo.Variable(this, DataFlowValue.Kind.STABLE_VALUE, null), type)
-        return ESVariable(ValueIdsFactory.dfvBased(dfv), type)
-    }
-
-    private fun ReceiverParameterDescriptor.extensionReceiverToESVariable(): ESVariable {
-        val dfv = DataFlowValue(IdentifierInfo.Receiver(value), type)
-        return ESVariable(ValueIdsFactory.dfvBased(dfv), type)
     }
 }

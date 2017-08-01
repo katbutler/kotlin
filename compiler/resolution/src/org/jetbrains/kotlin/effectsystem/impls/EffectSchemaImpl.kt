@@ -26,7 +26,7 @@ import org.jetbrains.kotlin.effectsystem.visitors.Substitutor
 
 class EffectSchemaImpl(override val clauses: List<ESClause>, val parameters: List<ESVariable>) : EffectSchema {
     override fun apply(arguments: List<EffectSchema>): EffectSchema? {
-        // Effect Schema as functor can contain pretty trivial operators (see ESOperator), which are all work only
+        // Effect Schema as functor can contain only pretty trivial operators (see ESOperator), which all work only
         // with sequential effects. All other effects transparently lift through application.
 
         // Here we make list of clauses that end with non-sequential effects. They will be added to result as-is

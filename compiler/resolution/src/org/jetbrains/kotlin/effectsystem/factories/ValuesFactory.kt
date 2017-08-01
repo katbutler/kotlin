@@ -48,10 +48,4 @@ object ValuesFactory {
             value = object {},
             type = DefaultBuiltIns.Instance.nullableAnyType
     )
-
-    val UNIT_CONSTANT = ESConstant(
-            id = UNIT_ID,
-            value = Unit,
-            type = DefaultBuiltIns.Instance.unitType
-    )
 }

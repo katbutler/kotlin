@@ -31,7 +31,6 @@ class InPlaceCallFunctorParser : FunctorParser {
     private val CALLS_EFFECT = FqName("kotlin.internal.CalledInPlace")
 
     override fun tryParseFunctor(resolvedCall: ResolvedCall<*>): ESFunctor? {
-
         val argsEffects = mutableListOf<AnnotationDescriptor>()
         val isRelevantArg = mutableListOf<Boolean>()
 
@@ -43,9 +42,9 @@ class InPlaceCallFunctorParser : FunctorParser {
             isRelevantArg.add(callsEffect != null)
         }
 
-        assert(argsEffects.size <= 1) { "Multi-effect annotations are not supported yet" }
-
         if (argsEffects.isEmpty()) return null
+
+        assert(argsEffects.size == 1) { "Multi-effect annotations are not supported yet" }
 
         val invocationCount = argsEffects[0].allValueArguments.values.singleOrNull()?.toInvocationCountEnum() ?: return null
         return InPlaceCallFunctor(invocationCount, isRelevantArg)

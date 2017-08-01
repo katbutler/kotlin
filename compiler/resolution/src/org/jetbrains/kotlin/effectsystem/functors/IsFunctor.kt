@@ -26,10 +26,10 @@ import org.jetbrains.kotlin.types.KotlinType
 
 class IsFunctor(val type: KotlinType, val isNegated: Boolean) : AbstractSequentialUnaryFunctor() {
     override fun combineClauses(list: List<ESClause>): List<ESClause> = list.flatMap {
+        // Cast to ESReturns should succeed as per AbstractSequentialUnaryFunctor contract
         val outcome = it.effect as ESReturns
         val premise = it.condition
 
-        // Cast to ESReturns should succeed as per AbstractSequentialUnaryFunctor contract
         val trueResult = ClausesFactory.create(premise.and(ESIs(outcome.value, this)), ESReturns(true.lift()))
         val falseResult = ClausesFactory.create(premise.and(ESIs(outcome.value, negated())), ESReturns(false.lift()))
         return listOf(trueResult, falseResult)
