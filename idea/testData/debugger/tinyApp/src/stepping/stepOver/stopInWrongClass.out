@@ -2,9 +2,8 @@ LineBreakpoint created at stopInWrongClass.Other.kt:6
 LineBreakpoint created at stopInWrongClass.kt:11
 Run Java
 Connected to the target VM
-stopInWrongClass.kt:6
-stopInWrongClass.kt:7
-resuming stopInWrongClass.kt:10
+stopInWrongClass.kt:11
+stopInWrongClass.kt:12
 Disconnected from the target VM
 
 Process finished with exit code 0
