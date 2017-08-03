@@ -21,7 +21,6 @@ import com.intellij.codeInsight.editorActions.moveLeftRight.MoveElementRightActi
 import com.intellij.codeInsight.editorActions.moveUpDown.MoveStatementDownAction
 import com.intellij.codeInsight.editorActions.moveUpDown.MoveStatementUpAction
 import com.intellij.codeInsight.editorActions.moveUpDown.StatementUpDownMover
-import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.editor.actionSystem.EditorAction
 import com.intellij.openapi.extensions.Extensions
@@ -33,6 +32,8 @@ import junit.framework.TestCase
 import org.jetbrains.kotlin.formatter.FormatSettingsUtil
 import org.jetbrains.kotlin.idea.codeInsight.upDownMover.KotlinDeclarationMover
 import org.jetbrains.kotlin.idea.codeInsight.upDownMover.KotlinExpressionMover
+import org.jetbrains.kotlin.idea.core.script.disableScriptDependenciesUpdater
+import org.jetbrains.kotlin.idea.core.script.enableScriptDependenciesUpdate
 import org.jetbrains.kotlin.test.InTextDirectivesUtils
 import org.jetbrains.kotlin.test.KotlinTestUtils
 import java.io.File
@@ -67,6 +68,16 @@ abstract class AbstractMoveLeftRightTest : AbstractCodeMoverTest() {
 }
 
 abstract class AbstractCodeMoverTest : LightCodeInsightTestCase() {
+    override fun setUp() {
+        super.setUp()
+        disableScriptDependenciesUpdater()
+    }
+
+    override fun tearDown() {
+        enableScriptDependenciesUpdate()
+        super.tearDown()
+    }
+
     protected fun doTest(path: String, isApplicableChecker: (isApplicableExpected: Boolean, direction: String) -> Unit) {
         configureByFile(path)
 
