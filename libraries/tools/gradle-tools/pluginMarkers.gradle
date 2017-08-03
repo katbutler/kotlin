@@ -17,7 +17,7 @@ ext.pluginMarkerProject = { String pluginProjectId ->
 
     task emptyJar(type: Jar)
 
-    version = findProperty('marker_version') ?: project.version
+    version = project.version + (findProperty('marker_version_suffix') ?: "")
 
     for (pluginId in pluginProject.pluginBundle.plugins*.id) {
         def artifactName = "${pluginId}.gradle.plugin"
