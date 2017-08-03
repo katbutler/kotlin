@@ -1,36 +1,52 @@
 package org.jetbrains.kotlin.gradle
 
 import org.gradle.api.logging.LogLevel
-import org.jetbrains.kotlin.com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.kotlin.gradle.util.modify
 import org.junit.AssumptionViolatedException
 import org.junit.Test
 import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.coroutines.experimental.buildSequence
 
-object MavenLocalUrlProvider : BaseGradleIT() {
+/** Copies the logic of Gradle [`mavenLocal()`](https://docs.gradle.org/3.4.1/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())
+ */
+private object MavenLocalUrlProvider {
+    private val homeDir get() = File(System.getProperty("user.home"))
+
+    private fun getLocalRepositoryFromXml(file: File): String? {
+        if (!file.isFile)
+            return null
+
+        val xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val localRepoNodes = xml.getElementsByTagName("localRepository")
+
+        if (localRepoNodes.length == 0)
+            return null
+
+        val content = localRepoNodes.item(0).textContent
+
+        return content.replace("\\$\\{(.*?)\\}".toRegex()) { System.getProperty(it.groupValues[1]) ?: it.value }
+    }
+
+    private val propertyMavenLocalRepoPath get() = System.getProperty("maven.repo.local")
+
+    private val homeSettingsLocalRepoPath
+        get() = getLocalRepositoryFromXml(File(homeDir, ".m2/settings.xml"))
+
+    private val m2HomeSettingsLocalRepoPath
+        get() = System.getProperty("M2_HOME")?.let { getLocalRepositoryFromXml(File(it, "conf/settings.xml")) }
+
+    private val defaultM2RepoPath get() = File(homeDir, ".m2/repository").absolutePath
+
+    /** The URL that points to the Gradle's mavenLocal() repository. */
     val mavenLocalUrl by lazy {
-        val buildScript = """
-        repositories {
-            println "mavenLocalUrl=" + mavenLocal().url
+        val paths = buildSequence {
+            yield(propertyMavenLocalRepoPath)
+            yield(homeSettingsLocalRepoPath)
+            yield(m2HomeSettingsLocalRepoPath)
+            yield(defaultM2RepoPath)
         }
-        """.trimIndent()
-
-        val tempBuildDir = FileUtil.createTempDirectory(
-                File(resourcesRootFile.absolutePath, "testProject/pluginsDsl"),
-                "MavenLocalUrlProvider",
-                null)
-
-        File(tempBuildDir, "build.gradle").writeText(buildScript)
-
-        var result: String? = null
-
-        val p = Project(tempBuildDir.name, "4.0", "pluginsDsl")
-        p.build("tasks") {
-            val urlPattern = "mavenLocalUrl=(.*)".toRegex()
-            result = urlPattern.find(output)?.groups!![1]?.value
-        }
-
-        result
+        File(paths.filterNotNull().first()).toURI().toString()
     }
 }
 
@@ -45,12 +61,11 @@ class PluginsDslIT : BaseGradleIT() {
         private const val PLUGIN_MARKER_VERSION_PLACEHOLDER = "<pluginMarkerVersion>"
 
         // Workaround for the restriction that snapshot versions are not supported
-        private const val DEFAULT_MARKER_VERSION = KOTLIN_VERSION + "-test"
+        private val MARKER_VERSION = KOTLIN_VERSION + (System.getProperty("pluginMarkerVersionSuffix") ?: "-test")
     }
 
     private fun projectWithMavenLocalPlugins(
             projectName: String,
-            pluginMarkerVersion: String = DEFAULT_MARKER_VERSION,
             wrapperVersion: String = GRADLE_VERSION,
             directoryPrefix: String? = DIRECTORY_PREFIX,
             minLogLevel: LogLevel = LogLevel.DEBUG
@@ -62,7 +77,6 @@ class PluginsDslIT : BaseGradleIT() {
         val settingsGradle = File(result.projectDir, "settings.gradle")
         settingsGradle.modify {
             val mavenLocalUrl = MavenLocalUrlProvider.mavenLocalUrl
-                    ?: throw AssumptionViolatedException("Could not get the Maven Local repository location.")
 
             it.replace(MAVEN_LOCAL_URL_PLACEHOLDER, mavenLocalUrl).apply {
                 if (this == it)
@@ -74,7 +88,7 @@ class PluginsDslIT : BaseGradleIT() {
                 .filter { it.isFile && it.name == "build.gradle" }
                 .forEach { buildGradle ->
                     buildGradle.modify { text ->
-                        text.replace(PLUGIN_MARKER_VERSION_PLACEHOLDER, pluginMarkerVersion)
+                        text.replace(PLUGIN_MARKER_VERSION_PLACEHOLDER, MARKER_VERSION)
                     }
                 }
 
@@ -86,7 +100,16 @@ class PluginsDslIT : BaseGradleIT() {
         val project = projectWithMavenLocalPlugins("allopenPluginsDsl")
         project.build("build") {
             assertSuccessful()
-            assertContains(":compileKotlin")
+            assertTasksExecuted(listOf(":compileKotlin"))
         }
     }
+
+    @Test fun testApplyToSubprojects() {
+        val project = projectWithMavenLocalPlugins("applyToSubprojects")
+        project.build("build") {
+            assertSuccessful()
+            assertTasksExecuted(listOf(":subproject:compileKotlin"))
+        }
+    }
+
 }
