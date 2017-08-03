@@ -32,6 +32,7 @@ import com.intellij.psi.PsiCodeFragment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.PsiModificationTrackerImpl
 import com.intellij.psi.util.PsiModificationTracker
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.CommonProcessors
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getTopmostParentOfType
@@ -81,7 +82,7 @@ class KotlinCodeBlockModificationListener(
                 if (changedElements.any { getInsideCodeBlockModificationScope(it.psi) == null } ||
                     (file is PsiCodeFragment && changedElements.isEmpty())) {
                     messageBusConnection.deliverImmediately()
-                    if (file.isPhysical) {
+                    if (file.isPhysical && file.virtualFile !is LightVirtualFile) {
                         lastAffectedModule = ModuleUtil.findModuleForPsiElement(file)
                         lastAffectedModuleModCount = modificationTrackerImpl.outOfCodeBlockModificationCount
                         modificationTrackerImpl.incCounter()
