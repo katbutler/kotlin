@@ -37,7 +37,7 @@ public class ClassBuilderMode {
     }
     
     public static ClassBuilderMode full(boolean generateSourceRetentionAnnotations) {
-        return generateSourceRetentionAnnotations ? KAPT : FULL;
+        return generateSourceRetentionAnnotations ? KAPT_INCREMENTAL_DATA : FULL;
     }
 
     /**
@@ -57,15 +57,15 @@ public class ClassBuilderMode {
             /* metadata = */ false,
             /* sourceRetention = */ true,
             /* generateMultiFileFacadePartClasses = */ false);
-    
+
     /**
      * Function signatures + metadata (to support incremental compilation with kapt)
      */
-    public final static ClassBuilderMode KAPT = new ClassBuilderMode(
+    public final static ClassBuilderMode KAPT_INCREMENTAL_DATA = new ClassBuilderMode(
             /* bodies = */ false,
             /* metadata = */ true,
             /* sourceRetention = */ true,
-            /* generateMultiFileFacadePartClasses = */ false);
+            /* generateMultiFileFacadePartClasses = */ true);
 
     /**
      * Function signatures + metadata (to support incremental compilation with kapt)

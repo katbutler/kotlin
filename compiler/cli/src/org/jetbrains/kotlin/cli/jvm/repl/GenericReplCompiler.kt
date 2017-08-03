@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.common.repl.*
 import org.jetbrains.kotlin.cli.jvm.config.JvmClasspathRoot
 import org.jetbrains.kotlin.codegen.ClassBuilderFactories
+import org.jetbrains.kotlin.codegen.ClassBuilderMode
 import org.jetbrains.kotlin.codegen.KotlinCodegenFacade
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -85,7 +86,7 @@ open class GenericReplCompiler(disposable: Disposable,
 
             val generationState = GenerationState(
                     psiFile.project,
-                    ClassBuilderFactories.binaries(false),
+                    ClassBuilderFactories.binaries(ClassBuilderMode.full(false)),
                     compilerState.analyzerEngine.module,
                     compilerState.analyzerEngine.trace.bindingContext,
                     listOf(psiFile),

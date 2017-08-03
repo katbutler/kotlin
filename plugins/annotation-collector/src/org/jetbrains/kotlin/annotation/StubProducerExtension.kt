@@ -63,7 +63,7 @@ class StubProducerExtension(
 
 private class StubClassBuilderFactory : ClassBuilderFactory {
 
-    override fun getClassBuilderMode() = ClassBuilderMode.KAPT
+    override fun getClassBuilderMode() = ClassBuilderMode.KAPT_INCREMENTAL_DATA
 
     override fun newClassBuilder(origin: JvmDeclarationOrigin) = AbstractClassBuilder.Concrete(
             ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS))

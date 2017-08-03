@@ -101,12 +101,12 @@ public class ClassBuilderFactories {
     }
     
     @NotNull
-    public static ClassBuilderFactory binaries(boolean generateSourceRetentionAnnotations) {
+    public static ClassBuilderFactory binaries(ClassBuilderMode classBuilderMode) {
         return new ClassBuilderFactory() {
             @NotNull
             @Override
             public ClassBuilderMode getClassBuilderMode() {
-                return ClassBuilderMode.full(generateSourceRetentionAnnotations);
+                return classBuilderMode;
             }
 
             @NotNull

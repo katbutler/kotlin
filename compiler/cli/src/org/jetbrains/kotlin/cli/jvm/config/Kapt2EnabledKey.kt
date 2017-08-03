@@ -18,4 +18,4 @@ package org.jetbrains.kotlin.cli.jvm.config
 
 import com.intellij.openapi.util.Key
 
-val IS_KAPT2_ENABLED_KEY = Key<Boolean>("IsKapt2EnabledKey")
+val IS_KAPT3_ENABLED_KEY = Key<Boolean>("IsKapt2EnabledKey")

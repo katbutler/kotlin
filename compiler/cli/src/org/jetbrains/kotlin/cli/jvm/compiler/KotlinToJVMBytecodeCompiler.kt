@@ -420,10 +420,10 @@ object KotlinToJVMBytecodeCompiler {
             sourceFiles: List<KtFile>,
             module: Module?
     ): GenerationState {
-        val isKapt2Enabled = environment.project.getUserData(IS_KAPT2_ENABLED_KEY) ?: false
+        val isKapt3Enabled = environment.project.getUserData(IS_KAPT3_ENABLED_KEY) ?: false
         val generationState = GenerationState(
                 environment.project,
-                ClassBuilderFactories.binaries(isKapt2Enabled),
+                ClassBuilderFactories.binaries(ClassBuilderMode.full(isKapt3Enabled)),
                 result.moduleDescriptor,
                 result.bindingContext,
                 sourceFiles,
