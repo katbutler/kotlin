@@ -84,6 +84,7 @@ class KotlinCodeBlockModificationListener(
                     messageBusConnection.deliverImmediately()
                     if (file.isPhysical && file.virtualFile !is LightVirtualFile) {
                         lastAffectedModule = ModuleUtil.findModuleForPsiElement(file)
+                        println("Kotlin-initiated OOCB increase for $lastAffectedModule")
                         lastAffectedModuleModCount = modificationTrackerImpl.outOfCodeBlockModificationCount
                         modificationTrackerImpl.incCounter()
                     }
@@ -96,14 +97,14 @@ class KotlinCodeBlockModificationListener(
             val newModCount = modificationTrackerImpl.outOfCodeBlockModificationCount
             val affectedModule = lastAffectedModule
             if (affectedModule != null && newModCount == lastAffectedModuleModCount + 1) {
-                println("Increasing modification count for module $affectedModule")
-                if (perModuleChangesHighwatermark== null) {
+                println("Increasing modification count for module $affectedModule to $newModCount")
+                if (perModuleChangesHighwatermark == null) {
                     perModuleChangesHighwatermark = lastAffectedModuleModCount
                 }
                 perModuleModCount[affectedModule] = newModCount
             }
             else {
-                println("Increasing global modification count")
+                println("Increasing global modification count to $newModCount")
                 perModuleChangesHighwatermark = null
                 perModuleModCount.clear()
             }

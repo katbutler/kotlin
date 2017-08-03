@@ -91,6 +91,9 @@ class ResolverForProjectImpl<M : ModuleInfo>(
         private val languageSettingsProvider: LanguageSettingsProvider = LanguageSettingsProvider.Default,
         private val invalidateOnOOCB: Boolean = true
 ) : ResolverForProject<M>() {
+    init {
+        println("Creating ResolverForProjectImpl $this ${System.identityHashCode(this)}")
+    }
 
     private class ModuleData(
             val moduleDescriptor: ModuleDescriptorImpl,
@@ -169,12 +172,18 @@ class ResolverForProjectImpl<M : ModuleInfo>(
         if (module in modules) {
             return projectContext.storageManager.compute {
                 var moduleData = descriptorByModule.getOrPut(module) {
-                    createModuleDescriptor(module).apply { println("Created initial module descriptor for module $module: $moduleDescriptor") }
+                    createModuleDescriptor(module).apply {
+                        println("Created initial module descriptor for module $module: $moduleDescriptor in ${this@ResolverForProjectImpl} [mod count $modificationCount]")
+                    }
                 }
                 val currentModCount = moduleData.modificationTracker?.modificationCount
                 if (currentModCount != null && currentModCount > moduleData.modificationCount!!) {
+                    println("Recreating descriptor for module $module")
                     moduleData = recreateModuleDescriptor(module)
                     recreateDependentModuleDescriptors(module)
+                }
+                else {
+                    println("Returning existing descriptor ${moduleData.moduleDescriptor} for module $module in ${this@ResolverForProjectImpl}")
                 }
                 moduleData.moduleDescriptor
             }
@@ -276,14 +285,13 @@ abstract class AnalyzerFacade {
 
 class LazyModuleDependencies<M: ModuleInfo>(
         storageManager: StorageManager,
-        module: M,
+        private val module: M,
         modulePlatforms: (M) -> MultiTargetPlatform?,
         firstDependency: M? = null,
-        resolverForProject: ResolverForProjectImpl<M>
+        private val resolverForProject: ResolverForProjectImpl<M>
 ) : ModuleDependencies {
     private val dependencies = storageManager.createLazyValue {
         val moduleDescriptor = resolverForProject.descriptorForModule(module)
-        println("Evaluating dependencies for $moduleDescriptor")
         buildSequence {
             if (firstDependency != null) {
                 yield(resolverForProject.descriptorForModule(firstDependency))
@@ -300,22 +308,24 @@ class LazyModuleDependencies<M: ModuleInfo>(
         }.toList()
     }
 
-    private val visibleInternals = storageManager.createLazyValue {
-        module.modulesWhoseInternalsAreVisible().mapTo(LinkedHashSet()) {
-            resolverForProject.descriptorForModule(it as M)
-        }
-    }
-
     private val implementingModules = storageManager.createLazyValue {
-        if (modulePlatforms(module) != MultiTargetPlatform.Common) emptySet<ModuleDescriptorImpl>()
+        if (modulePlatforms(module) != MultiTargetPlatform.Common) emptySet<M>()
         else resolverForProject.modules
-                .filter { modulePlatforms(it) != MultiTargetPlatform.Common && module in it.dependencies() }
-                .mapTo(mutableSetOf(), resolverForProject::descriptorForModule)
+                .filterTo(mutableSetOf()) {
+                    modulePlatforms(it) != MultiTargetPlatform.Common && module in it.dependencies()
+                }
     }
 
     override val allDependencies: List<ModuleDescriptorImpl> get() = dependencies()
-    override val modulesWhoseInternalsAreVisible: Set<ModuleDescriptorImpl> get() = visibleInternals()
-    override val allImplementingModules: Set<ModuleDescriptorImpl> get() = implementingModules()
+
+    override val modulesWhoseInternalsAreVisible: Set<ModuleDescriptorImpl>
+        get() =
+            module.modulesWhoseInternalsAreVisible().mapTo(LinkedHashSet()) {
+                resolverForProject.descriptorForModule(it as M)
+            }
+
+    override val allImplementingModules: Set<ModuleDescriptorImpl>
+        get() = implementingModules().mapTo(mutableSetOf()) { resolverForProject.descriptorForModule(it) }
 }
 
 

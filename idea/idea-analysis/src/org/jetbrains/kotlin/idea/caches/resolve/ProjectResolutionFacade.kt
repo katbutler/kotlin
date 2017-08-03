@@ -42,6 +42,10 @@ internal class ProjectResolutionFacade(
         val syntheticFiles: Collection<KtFile> = listOf(),
         val allModules: Collection<IdeaModuleInfo>? = null // null means create resolvers for modules from idea model
 ) {
+    init {
+        println("Creating ProjectResolutionFacade $this")
+    }
+
     private val cachedValue = CachedValuesManager.getManager(project).createCachedValue(
             {
                 val resolverProvider = computeModuleResolverProvider()
@@ -68,12 +72,7 @@ internal class ProjectResolutionFacade(
     }
 
     private val moduleResolverProvider: ModuleResolverProvider
-        get() = globalContext.storageManager.compute {
-            if (cachedValue.hasUpToDateValue()) {
-                println("Returning cached ModuleResolverProvider for $this")
-            }
-            cachedValue.value
-        }
+        get() = globalContext.storageManager.compute { cachedValue.value }
 
     fun resolverForModuleInfo(moduleInfo: IdeaModuleInfo) = moduleResolverProvider.resolverForProject.resolverForModule(moduleInfo)
     fun tryGetResolverForModuleInfo(moduleInfo: IdeaModuleInfo) = moduleResolverProvider.resolverForProject.tryGetResolverForModule(moduleInfo)
