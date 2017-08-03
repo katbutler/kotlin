@@ -15,30 +15,32 @@ ext.pluginMarkerProject = { String pluginProjectId ->
 
     configurePublishing(project)
 
-    if (!isSonatypePublish) {
-        task emptyJar(type: Jar)
+    task emptyJar(type: Jar)
 
-        for (pluginId in pluginProject.pluginBundle.plugins*.id) {
-            def artifactName = "${pluginId}.gradle.plugin"
+    version = findProperty('marker_version') ?: project.version
 
-            artifacts {
+    for (pluginId in pluginProject.pluginBundle.plugins*.id) {
+        def artifactName = "${pluginId}.gradle.plugin"
+
+        artifacts {
+            ['', 'javadoc', 'sources'].forEach { theClassifier ->
                 archives(emptyJar) {
                     group = pluginId
                     name = artifactName
-                    version = findProperty('marker_version') ?: project.version
+                    classifier theClassifier
                 }
             }
-
-            def setUpSeparateArtifact = {
-                addFilter(pluginId) { artifact, file -> artifact.name == artifactName }
-                def pom = pom(pluginId)
-                pom.groupId = pluginId
-                pom.artifactId = "${pluginId}.gradle.plugin"
-            }
-
-            configure(uploadArchives.repositories.mavenDeployer, setUpSeparateArtifact)
-            configure(install.repositories.mavenInstaller, setUpSeparateArtifact)
         }
+
+        def setUpSeparateArtifact = {
+            addFilter(pluginId) { artifact, file -> artifact.name == artifactName }
+            def pom = pom(pluginId)
+            pom.groupId = pluginId
+            pom.artifactId = "${pluginId}.gradle.plugin"
+        }
+
+        configure(uploadArchives.repositories.mavenDeployer, setUpSeparateArtifact)
+        configure(install.repositories.mavenInstaller, setUpSeparateArtifact)
     }
 
     publish.dependsOn uploadArchives
